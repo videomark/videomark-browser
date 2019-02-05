@@ -1,0 +1,44 @@
+# This software patche is licensed under the same license as original code:
+### third_party/blink/renderer/core/timing/performance.cc
+* https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/core/LICENSE-LGPL-2
+* https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/core/LICENSE-LGPL-2.1
+
+diff --git a/third_party/blink/renderer/core/timing/performance.cc b/third_party/blink/renderer/core/timing/performance.cc
+index abab35e..18b94dc 100644
+--- a/third_party/blink/renderer/core/timing/performance.cc
++++ b/third_party/blink/renderer/core/timing/performance.cc
+@@ -38,6 +38,8 @@
+ #include "third_party/blink/renderer/core/dom/document.h"
+ #include "third_party/blink/renderer/core/dom/document_timing.h"
+ #include "third_party/blink/renderer/core/dom/events/event.h"
++#include "third_party/blink/renderer/core/frame/local_dom_window.h"
++#include "third_party/blink/renderer/core/frame/local_frame_client.h"
+ #include "third_party/blink/renderer/core/frame/local_frame.h"
+ #include "third_party/blink/renderer/core/frame/use_counter.h"
+ #include "third_party/blink/renderer/core/loader/document_load_timing.h"
+@@ -57,6 +59,7 @@
+ #include "third_party/blink/renderer/platform/weborigin/security_origin.h"
+ #include "third_party/blink/renderer/platform/wtf/std_lib_extras.h"
+ #include "third_party/blink/renderer/platform/wtf/time.h"
++#include "content/public/common/sodium_whitelist.h"
+ 
+ namespace blink {
+ 
+@@ -297,6 +300,17 @@ bool Performance::PassesTimingAllowCheck(
+     const SecurityOrigin& initiator_security_origin,
+     const AtomicString& original_timing_allow_origin,
+     ExecutionContext* context) {
++  LocalDOMWindow* window = context->ExecutingWindow();
++  if (window) {
++    LocalFrame* frame = window->GetFrame();
++    if (frame) {
++      GURL url = GURL(frame->GetDocument()->Url());
++      if (frame->Client()->IsEnableSodium() && content::SodiumWhitelist::IsAllowSodiumJs(url)) {
++        return true;
++      }
++    }
++  }
++
+   const KURL& response_url = response.WasFetchedViaServiceWorker()
+                                  ? response.OriginalURLViaServiceWorker()
+                                  : response.Url();

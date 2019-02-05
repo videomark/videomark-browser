@@ -1,0 +1,116 @@
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/externalnav/ExternalNavigationHandler.java b/chrome/android/java/src/org/chromium/chrome/browser/externalnav/ExternalNavigationHandler.java
+index dba7fef..24a7487 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/externalnav/ExternalNavigationHandler.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/externalnav/ExternalNavigationHandler.java
+@@ -359,6 +359,11 @@ public class ExternalNavigationHandler {
+             return OverrideUrlLoadingResult.NO_OVERRIDE;
+         }
+ 
++        if (mDelegate.getEnableSodium() && params.getUrl().matches(".*youtube\\.com(\\/.*)?")) {
++            if (DEBUG) Log.i(TAG, "NO_OVERRIDE: YouTube URL for sodium.");
++            return OverrideUrlLoadingResult.NO_OVERRIDE;
++        }
++
+         // Special case - It makes no sense to use an external application for a YouTube
+         // pairing code URL, since these match the current tab with a device (Chromecast
+         // or similar) it is supposed to be controlling. Using a different application
+diff --git a/content/browser/frame_host/navigation_controller_impl.cc b/content/browser/frame_host/navigation_controller_impl.cc
+index d8aca9e..647713a 100644
+--- a/content/browser/frame_host/navigation_controller_impl.cc
++++ b/content/browser/frame_host/navigation_controller_impl.cc
+@@ -77,6 +77,7 @@
+ #include "content/public/common/content_client.h"
+ #include "content/public/common/content_constants.h"
+ #include "content/public/common/content_features.h"
++#include "content/public/common/sodium_whitelist.h"
+ #include "content/public/common/url_utils.h"
+ #include "media/base/mime_util.h"
+ #include "net/base/escape.h"
+@@ -777,6 +778,11 @@ bool NavigationControllerImpl::PendingEntryMatchesHandle(
+          pending_entry_->GetUniqueID() == handle->pending_nav_entry_id();
+ }
+ 
++bool NavigationEntryIsOverridingUserAgent(bool enable_sodium, const NavigationEntry* entry) {
++  return entry && (entry->GetIsOverridingUserAgent() ||
++    (enable_sodium && content::SodiumWhitelist::IsForceDesktopMode(entry->GetURL())));
++}
++
+ bool NavigationControllerImpl::RendererDidNavigate(
+     RenderFrameHostImpl* rfh,
+     const FrameHostMsg_DidCommitProvisionalLoad_Params& params,
+@@ -790,9 +796,9 @@ bool NavigationControllerImpl::RendererDidNavigate(
+   if (GetLastCommittedEntry()) {
+     details->previous_url = GetLastCommittedEntry()->GetURL();
+     details->previous_entry_index = GetLastCommittedEntryIndex();
+-    if (pending_entry_ &&
+-        pending_entry_->GetIsOverridingUserAgent() !=
+-            GetLastCommittedEntry()->GetIsOverridingUserAgent())
++    bool enable_sodium = GetEnableSodium();
++    if (NavigationEntryIsOverridingUserAgent(enable_sodium, pending_entry_) !=
++        NavigationEntryIsOverridingUserAgent(enable_sodium, GetLastCommittedEntry()))
+       overriding_user_agent_changed = true;
+   } else {
+     details->previous_url = GURL();
+diff --git a/content/browser/frame_host/navigation_request.cc b/content/browser/frame_host/navigation_request.cc
+index dd69143..e79595641 100644
+--- a/content/browser/frame_host/navigation_request.cc
++++ b/content/browser/frame_host/navigation_request.cc
+@@ -55,6 +55,7 @@
+ #include "content/public/common/request_context_type.h"
+ #include "content/public/common/url_constants.h"
+ #include "content/public/common/url_utils.h"
++#include "content/public/common/sodium_whitelist.h"
+ #include "content/public/common/web_preferences.h"
+ #include "net/base/load_flags.h"
+ #include "net/base/net_errors.h"
+@@ -484,11 +485,15 @@ NavigationRequest::NavigationRequest(
+   if (entry)
+     nav_entry_id_ = entry->GetUniqueID();
+ 
++  RendererPreferences renderer_preferences = frame_tree_node_->render_manager()->current_host()->GetDelegate()
++    ->GetRendererPrefs(frame_tree_node_->navigator()->GetController()->GetBrowserContext());
+   std::string user_agent_override;
+   if (request_params.is_overriding_user_agent ||
++      (renderer_preferences.enable_sodium && entry && content::SodiumWhitelist::IsForceDesktopMode(entry->GetURL())) ||
+       (entry && entry->GetIsOverridingUserAgent())) {
+     user_agent_override =
+         frame_tree_node_->navigator()->GetDelegate()->GetUserAgentOverride();
++    request_params_.is_overriding_user_agent = true; // used by navigator.userAgent
+   }
+ 
+   std::unique_ptr<net::HttpRequestHeaders> embedder_additional_headers;
+diff --git a/content/browser/web_contents/web_contents_impl.cc b/content/browser/web_contents/web_contents_impl.cc
+index 499c8c0..2deae91 100644
+--- a/content/browser/web_contents/web_contents_impl.cc
++++ b/content/browser/web_contents/web_contents_impl.cc
+@@ -127,6 +127,7 @@
+ #include "content/public/common/page_zoom.h"
+ #include "content/public/common/result_codes.h"
+ #include "content/public/common/service_manager_connection.h"
++#include "content/public/common/sodium_whitelist.h"
+ #include "content/public/common/url_utils.h"
+ #include "content/public/common/web_preferences.h"
+ #include "net/base/url_util.h"
+@@ -1247,8 +1248,7 @@ void WebContentsImpl::SetUserAgentOverride(const std::string& override,
+ 
+   // Reload the page if a load is currently in progress to avoid having
+   // different parts of the page loaded using different user agents.
+-  NavigationEntry* entry = controller_.GetVisibleEntry();
+-  if (IsLoading() && entry != nullptr && entry->GetIsOverridingUserAgent())
++  if (IsLoading() && IsOverridingUserAgent())
+     controller_.Reload(ReloadType::BYPASSING_CACHE, true);
+ 
+   for (auto& observer : observers_)
+@@ -2960,8 +2960,10 @@ FrameTree* WebContentsImpl::GetFrameTree() {
+ }
+ 
+ bool WebContentsImpl::IsOverridingUserAgent() {
+-  return GetController().GetVisibleEntry() &&
+-         GetController().GetVisibleEntry()->GetIsOverridingUserAgent();
++  // used by viewport
++  NavigationEntry* entry = controller_.GetVisibleEntry();
++  return entry && (entry->GetIsOverridingUserAgent() ||
++    (renderer_preferences_.enable_sodium && content::SodiumWhitelist::IsForceDesktopMode(entry->GetURL())));
+ }
+ 
+ bool WebContentsImpl::IsJavaScriptDialogShowing() const {

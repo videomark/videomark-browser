@@ -1,0 +1,201 @@
+diff --git a/chrome/android/java/res/menu/main_menu.xml b/chrome/android/java/res/menu/main_menu.xml
+index 3b5aa0e..b7785e08 100644
+--- a/chrome/android/java/res/menu/main_menu.xml
++++ b/chrome/android/java/res/menu/main_menu.xml
+@@ -40,6 +40,8 @@
+             android:title="@null" />
+         <item android:id="@+id/recent_tabs_menu_id"
+             android:title="@string/menu_recent_tabs" />
++        <item android:id="@+id/sodium_result_id"
++            android:title="@string/menu_sodium_result" />
+         <item android:id="@+id/open_history_menu_id"
+             android:title="@string/menu_history" />
+         <item android:id="@+id/downloads_menu_id"
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
+index 4752e75e40..e6f7b52 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
+@@ -2073,6 +2073,19 @@ public abstract class ChromeActivity extends AsyncInitializationActivity
+         } else if (id == R.id.info_menu_id) {
+             PageInfoController.show(
+                     this, currentTab, null, PageInfoController.OpenedFromSource.MENU);
++        } else if (id == R.id.sodium_result_id) {
++            String url = "chrome://videomark/";
++            if (NewTabPage.isNTPUrl(currentTab.getUrl())) {
++                currentTab.loadUrl(new LoadUrlParams(url));
++            } else if (currentTab.getUrl().startsWith(url)) {
++                currentTab.reload();
++            } else {
++                TabCreator tabCreator = getTabCreator(currentTab.isIncognito());
++                if (tabCreator == null) return false;
++
++                tabCreator.createNewTab(new LoadUrlParams(url, PageTransition.LINK),
++                        TabModel.TabLaunchType.FROM_LINK, getActivityTab());
++            }
+         } else if (id == R.id.open_history_menu_id) {
+             if (NewTabPage.isNTPUrl(currentTab.getUrl())) {
+                 NewTabPageUma.recordAction(NewTabPageUma.ACTION_OPENED_HISTORY_MANAGER);
+diff --git a/chrome/android/java/strings/android_chrome_strings.grd b/chrome/android/java/strings/android_chrome_strings.grd
+index 9028535..24e4afa 100644
+--- a/chrome/android/java/strings/android_chrome_strings.grd
++++ b/chrome/android/java/strings/android_chrome_strings.grd
+@@ -2897,6 +2897,9 @@ To obtain new licenses, connect to the internet and play your downloaded content
+       <message name="IDS_MENU_RECENT_TABS" desc="Menu item for opening the 'Recent tabs' page that shows recently closed tabs and pages the user has opened on his/her other devices. [CHAR-LIMIT=27]">
+         Recent tabs
+       </message>
++      <message name="IDS_MENU_SODIUM_RESULT" desc="Menu item for Sodium result">
++        動画の視聴結果を確認
++      </message>
+       <message name="IDS_MENU_HISTORY" desc="Menu item for opening the history page. [CHAR-LIMIT=27]">
+         History
+       </message>
+diff --git a/chrome/browser/browser_resources.grd b/chrome/browser/browser_resources.grd
+index 994e15e..d6e0514 100644
+--- a/chrome/browser/browser_resources.grd
++++ b/chrome/browser/browser_resources.grd
+@@ -92,6 +92,16 @@
+       <if expr="not is_android">
+         <include name="IDR_ABOUT_SYS_HTML" file="resources\about_sys\about_sys.html" flattenhtml="true" type="BINDATA" />
+       </if>
++      <include name="IDR_SODIUM_RESULT_INDEX_HTML" file="resources\sodium_result\index.html" flattenhtml="true" allowexternalscript="true" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_MAIN_JS" file="resources\sodium_result\main.js" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_VIDEOMARK_64_PNG" file="resources\sodium_result\videomark-64.png" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_VIDEOMARK_96_PNG" file="resources\sodium_result\videomark-96.png" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_VIDEOMARK_192_PNG" file="resources\sodium_result\videomark-192.png" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_STATIC_CSS_MAIN_CSS" file="resources\sodium_result\static\css\main.5bc593b0.chunk.css" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_STATIC_JS_1_JS" file="resources\sodium_result\static\js\1.5211cab8.chunk.js" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_STATIC_JS_MAIN_JS" file="resources\sodium_result\static\js\main.18726980.chunk.js" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_REFRESH_SVG" file="resources\sodium_result\static\media\refresh.ee30736b.svg" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_TIMES_SVG" file="resources\sodium_result\static\media\times.d5209bce.svg" type="BINDATA" skip_minify="true" compress="gzip" />
+       <include name="IDR_ACCESSIBILITY_HTML" file="resources\accessibility\accessibility.html" flattenhtml="true" allowexternalscript="true" compress="gzip" type="BINDATA" />
+       <include name="IDR_ACCESSIBILITY_CSS" file="resources\accessibility\accessibility.css" compress="gzip" type="BINDATA" />
+       <include name="IDR_ACCESSIBILITY_JS" file="resources\accessibility\accessibility.js" flattenhtml="true" compress="gzip" type="BINDATA" />
+diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
+index ea8b1a6..a6bf379 100644
+--- a/chrome/browser/ui/BUILD.gn
++++ b/chrome/browser/ui/BUILD.gn
+@@ -793,6 +793,8 @@ jumbo_split_static_library("ui") {
+     "webui/version_ui.h",
+     "webui/webui_util.cc",
+     "webui/webui_util.h",
++    "webui/sodium_result.cc",
++    "webui/sodium_result.h",
+   ]
+ 
+   if (safe_browsing_mode == 1) {
+diff --git a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
+index ce230a0..82249e2 100644
+--- a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
++++ b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
+@@ -64,6 +64,7 @@
+ #include "chrome/browser/ui/webui/usb_internals/usb_internals_ui.h"
+ #include "chrome/browser/ui/webui/user_actions/user_actions_ui.h"
+ #include "chrome/browser/ui/webui/version_ui.h"
++#include "chrome/browser/ui/webui/sodium_result.h"
+ #include "chrome/common/buildflags.h"
+ #include "chrome/common/chrome_features.h"
+ #include "chrome/common/pref_names.h"
+@@ -421,6 +422,8 @@ WebUIFactoryFunction GetWebUIFactoryFunction(WebUI* web_ui,
+     return &NewWebUI<UserActionsUI>;
+   if (url.host_piece() == chrome::kChromeUIVersionHost)
+     return &NewWebUI<VersionUI>;
++  if (url.host_piece() == chrome::kChromeUISodiumResultHost)
++    return &NewWebUI<SodiumResult>;
+ 
+   /****************************************************************************
+    * OS Specific #defines
+diff --git a/chrome/browser/ui/webui/sodium_result.cc b/chrome/browser/ui/webui/sodium_result.cc
+new file mode 100644
+index 0000000..1d14365
+--- /dev/null
++++ b/chrome/browser/ui/webui/sodium_result.cc
+@@ -0,0 +1,40 @@
++#include "chrome/browser/ui/webui/sodium_result.h"
++
++#include <memory>
++
++#include "chrome/browser/profiles/profile.h"
++#include "chrome/common/webui_url_constants.h"
++#include "chrome/grit/browser_resources.h"
++#include "content/public/browser/web_ui_data_source.h"
++
++using content::WebUIDataSource;
++
++namespace {
++
++WebUIDataSource* CreateSodiumResultDataSource() {
++  WebUIDataSource* html_source = WebUIDataSource::Create(chrome::kChromeUISodiumResultHost);
++  html_source->AddResourcePath("main.js",           IDR_SODIUM_RESULT_MAIN_JS);
++  html_source->AddResourcePath("videomark-64.png",  IDR_SODIUM_RESULT_VIDEOMARK_64_PNG);
++  html_source->AddResourcePath("videomark-96.png",  IDR_SODIUM_RESULT_VIDEOMARK_96_PNG);
++  html_source->AddResourcePath("videomark-192.png", IDR_SODIUM_RESULT_VIDEOMARK_192_PNG);
++
++  html_source->AddResourcePath("static/css/main.5bc593b0.chunk.css", IDR_SODIUM_RESULT_STATIC_CSS_MAIN_CSS);
++  html_source->AddResourcePath("static/js/1.5211cab8.chunk.js",      IDR_SODIUM_RESULT_STATIC_JS_1_JS);
++  html_source->AddResourcePath("static/js/main.18726980.chunk.js",   IDR_SODIUM_RESULT_STATIC_JS_MAIN_JS);
++  html_source->AddResourcePath("static/media/refresh.ee30736b.svg",  IDR_SODIUM_RESULT_STATIC_MEDIA_REFRESH_SVG);
++  html_source->AddResourcePath("static/media/times.d5209bce.svg",    IDR_SODIUM_RESULT_STATIC_MEDIA_TIMES_SVG);
++
++  html_source->SetDefaultResource(IDR_SODIUM_RESULT_INDEX_HTML);
++  html_source->UseGzip();
++  return html_source;
++}
++
++}  // namespace
++
++SodiumResult::SodiumResult(content::WebUI* web_ui) : content::WebUIController(web_ui) {
++  Profile* profile = Profile::FromWebUI(web_ui);
++  WebUIDataSource::Add(profile, CreateSodiumResultDataSource());
++}
++
++SodiumResult::~SodiumResult() {
++}
+diff --git a/chrome/browser/ui/webui/sodium_result.h b/chrome/browser/ui/webui/sodium_result.h
+new file mode 100644
+index 0000000..47ddfc0
+--- /dev/null
++++ b/chrome/browser/ui/webui/sodium_result.h
+@@ -0,0 +1,17 @@
++#ifndef CHROME_BROWSER_UI_WEBUI_SODIUM_RESULT_H_
++#define CHROME_BROWSER_UI_WEBUI_SODIUM_RESULT_H_
++
++#include "base/macros.h"
++#include "content/public/browser/web_ui_controller.h"
++
++// The WebUI handler for chrome://videomark.
++class SodiumResult : public content::WebUIController {
++ public:
++  explicit SodiumResult(content::WebUI* web_ui);
++  ~SodiumResult() override;
++
++ private:
++  DISALLOW_COPY_AND_ASSIGN(SodiumResult);
++};
++
++#endif  // CHROME_BROWSER_UI_WEBUI_SODIUM_RESULT_H_
+diff --git a/chrome/common/webui_url_constants.cc b/chrome/common/webui_url_constants.cc
+index 0b53823..fa28f4d 100644
+--- a/chrome/common/webui_url_constants.cc
++++ b/chrome/common/webui_url_constants.cc
+@@ -169,6 +169,8 @@ const char kChromeUIWelcomeWin10Host[] = "welcome-win10";
+ const char kChromeUIWelcomeWin10URL[] = "chrome://welcome-win10/";
+ const char kDeprecatedChromeUIHistoryFrameHost[] = "history-frame";
+ const char kDeprecatedChromeUIHistoryFrameURL[] = "chrome://history-frame/";
++const char kChromeUISodiumResultHost[] = "videomark";
++const char kChromeUISodiumResultURL[] = "chrome://videomark/";
+ 
+ #if defined(OS_ANDROID)
+ const char kChromeUIEocInternalsHost[] = "eoc-internals";
+diff --git a/chrome/common/webui_url_constants.h b/chrome/common/webui_url_constants.h
+index 29dfa1a..8270795 100644
+--- a/chrome/common/webui_url_constants.h
++++ b/chrome/common/webui_url_constants.h
+@@ -169,6 +169,8 @@ extern const char kChromeUIWelcomeWin10Host[];
+ extern const char kChromeUIWelcomeWin10URL[];
+ extern const char kDeprecatedChromeUIHistoryFrameHost[];
+ extern const char kDeprecatedChromeUIHistoryFrameURL[];
++extern const char kChromeUISodiumResultHost[];
++extern const char kChromeUISodiumResultURL[];
+ 
+ #if defined(OS_ANDROID)
+ extern const char kChromeUIEocInternalsHost[];
