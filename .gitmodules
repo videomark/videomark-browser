@@ -1,0 +1,6 @@
+[submodule "sodium.js"]
+	path = sodium.js
+	url = git@github.com:videomark/sodium.js.git
+[submodule "videomark-log-view"]
+	path = videomark-log-view
+	url = git@github.com:videomark/videomark-log-view.git
