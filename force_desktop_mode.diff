@@ -80,18 +80,28 @@ index dd69143..e79595641 100644
  
    std::unique_ptr<net::HttpRequestHeaders> embedder_additional_headers;
 diff --git a/content/browser/web_contents/web_contents_impl.cc b/content/browser/web_contents/web_contents_impl.cc
-index 499c8c0..2deae91 100644
+index 499c8c0..7adb190 100644
 --- a/content/browser/web_contents/web_contents_impl.cc
 +++ b/content/browser/web_contents/web_contents_impl.cc
-@@ -127,6 +127,7 @@
+@@ -35,6 +35,7 @@
+ #include "components/download/public/common/download_stats.h"
+ #include "components/rappor/public/rappor_utils.h"
+ #include "components/url_formatter/url_formatter.h"
++#include "components/version_info/version_info.h"
+ #include "content/browser/accessibility/accessibility_tree_formatter.h"
+ #include "content/browser/accessibility/accessibility_tree_formatter_blink.h"
+ #include "content/browser/accessibility/browser_accessibility_state_impl.h"
+@@ -127,7 +128,9 @@
  #include "content/public/common/page_zoom.h"
  #include "content/public/common/result_codes.h"
  #include "content/public/common/service_manager_connection.h"
 +#include "content/public/common/sodium_whitelist.h"
  #include "content/public/common/url_utils.h"
++#include "content/public/common/user_agent.h"
  #include "content/public/common/web_preferences.h"
  #include "net/base/url_util.h"
-@@ -1247,8 +1248,7 @@ void WebContentsImpl::SetUserAgentOverride(const std::string& override,
+ #include "net/http/http_cache.h"
+@@ -1247,8 +1250,7 @@ void WebContentsImpl::SetUserAgentOverride(const std::string& override,
  
    // Reload the page if a load is currently in progress to avoid having
    // different parts of the page loaded using different user agents.
@@ -101,7 +111,7 @@ index 499c8c0..2deae91 100644
      controller_.Reload(ReloadType::BYPASSING_CACHE, true);
  
    for (auto& observer : observers_)
-@@ -2960,8 +2960,10 @@ FrameTree* WebContentsImpl::GetFrameTree() {
+@@ -2960,8 +2962,10 @@ FrameTree* WebContentsImpl::GetFrameTree() {
  }
  
  bool WebContentsImpl::IsOverridingUserAgent() {
@@ -114,3 +124,21 @@ index 499c8c0..2deae91 100644
  }
  
  bool WebContentsImpl::IsJavaScriptDialogShowing() const {
+@@ -6575,6 +6579,17 @@ void WebContentsImpl::UpdateWebContentsVisibility(Visibility visibility) {
+ }
+ 
+ void WebContentsImpl::UpdateOverridingUserAgent() {
++  // override chrome/browser/android/content/content_utils.cc
++  if (renderer_preferences_.enable_sodium) {
++    const char kLinuxInfoStr[] = "X11; Linux x86_64";
++    const char kWindowsInfoStr[] = "Windows NT 10.0; Win64; x64";
++    std::string product = version_info::GetProductNameAndVersionForUserAgent();
++    std::string spoofed_ua = content::BuildUserAgentFromOSAndProduct(
++      content::SodiumWhitelist::IsForceDesktopMode(GetVisibleURL())
++      ? kWindowsInfoStr : kLinuxInfoStr, product);
++    SetUserAgentOverride(spoofed_ua, false);
++  }
++
+   NotifyPreferencesChanged();
+ }
+ 
