@@ -15,7 +15,7 @@ index dba7fef..24a7487 100644
          // pairing code URL, since these match the current tab with a device (Chromecast
          // or similar) it is supposed to be controlling. Using a different application
 diff --git a/content/browser/frame_host/navigation_controller_impl.cc b/content/browser/frame_host/navigation_controller_impl.cc
-index d8aca9e..647713a 100644
+index d8aca9e..bef9227 100644
 --- a/content/browser/frame_host/navigation_controller_impl.cc
 +++ b/content/browser/frame_host/navigation_controller_impl.cc
 @@ -77,6 +77,7 @@
@@ -38,19 +38,40 @@ index d8aca9e..647713a 100644
  bool NavigationControllerImpl::RendererDidNavigate(
      RenderFrameHostImpl* rfh,
      const FrameHostMsg_DidCommitProvisionalLoad_Params& params,
-@@ -790,9 +796,9 @@ bool NavigationControllerImpl::RendererDidNavigate(
+@@ -784,19 +790,21 @@ bool NavigationControllerImpl::RendererDidNavigate(
+     bool is_same_document_navigation,
+     NavigationHandleImpl* navigation_handle) {
+   is_initial_navigation_ = false;
++  bool enable_sodium = GetEnableSodium();
+ 
+   // Save the previous state before we clobber it.
+   bool overriding_user_agent_changed = false;
    if (GetLastCommittedEntry()) {
      details->previous_url = GetLastCommittedEntry()->GetURL();
      details->previous_entry_index = GetLastCommittedEntryIndex();
 -    if (pending_entry_ &&
 -        pending_entry_->GetIsOverridingUserAgent() !=
 -            GetLastCommittedEntry()->GetIsOverridingUserAgent())
-+    bool enable_sodium = GetEnableSodium();
 +    if (NavigationEntryIsOverridingUserAgent(enable_sodium, pending_entry_) !=
 +        NavigationEntryIsOverridingUserAgent(enable_sodium, GetLastCommittedEntry()))
        overriding_user_agent_changed = true;
    } else {
      details->previous_url = GURL();
+     details->previous_entry_index = -1;
++    if (NavigationEntryIsOverridingUserAgent(enable_sodium, pending_entry_))
++      overriding_user_agent_changed = true;
+   }
+ 
+   // If there is a pending entry at this point, it should have a SiteInstance,
+@@ -807,6 +815,8 @@ bool NavigationControllerImpl::RendererDidNavigate(
+   if (pending_entry_ && pending_entry_->restore_type() != RestoreType::NONE) {
+     pending_entry_->set_restore_type(RestoreType::NONE);
+     was_restored = true;
++    if (NavigationEntryIsOverridingUserAgent(enable_sodium, pending_entry_))
++      overriding_user_agent_changed = true;
+   }
+ 
+   // If this is a navigation to a matching pending_entry_ and the SiteInstance
 diff --git a/content/browser/frame_host/navigation_request.cc b/content/browser/frame_host/navigation_request.cc
 index dd69143..e79595641 100644
 --- a/content/browser/frame_host/navigation_request.cc
