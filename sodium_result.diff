@@ -50,7 +50,7 @@ index 9028535..24e4afa 100644
          History
        </message>
 diff --git a/chrome/browser/browser_resources.grd b/chrome/browser/browser_resources.grd
-index 994e15e..74f1521 100644
+index 994e15e..2996438 100644
 --- a/chrome/browser/browser_resources.grd
 +++ b/chrome/browser/browser_resources.grd
 @@ -92,6 +92,16 @@
@@ -62,7 +62,7 @@ index 994e15e..74f1521 100644
 +      <include name="IDR_SODIUM_RESULT_VIDEOMARK_96_PNG" file="resources\sodium_result\videomark-96.png" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_VIDEOMARK_192_PNG" file="resources\sodium_result\videomark-192.png" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_CSS_MAIN_CSS" file="resources\sodium_result\static\css\main.chunk.css" type="BINDATA" skip_minify="true" compress="gzip" />
-+      <include name="IDR_SODIUM_RESULT_STATIC_JS_1_JS" file="resources\sodium_result\static\js\1.chunk.js" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_STATIC_JS_2_JS" file="resources\sodium_result\static\js\2.chunk.js" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_JS_MAIN_JS" file="resources\sodium_result\static\js\main.chunk.js" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_JS_RUNTIME_MAIN_JS" file="resources\sodium_result\static\js\runtime~main.js" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_REFRESH_SVG" file="resources\sodium_result\static\media\refresh.svg" type="BINDATA" skip_minify="true" compress="gzip" />
@@ -106,7 +106,7 @@ index ce230a0..82249e2 100644
     * OS Specific #defines
 diff --git a/chrome/browser/ui/webui/sodium_result.cc b/chrome/browser/ui/webui/sodium_result.cc
 new file mode 100644
-index 0000000..67400e2
+index 0000000..7c4b7ce
 --- /dev/null
 +++ b/chrome/browser/ui/webui/sodium_result.cc
 @@ -0,0 +1,40 @@
@@ -130,7 +130,7 @@ index 0000000..67400e2
 +  html_source->AddResourcePath("videomark-192.png", IDR_SODIUM_RESULT_VIDEOMARK_192_PNG);
 +
 +  html_source->AddResourcePath("static/css/main.chunk.css", IDR_SODIUM_RESULT_STATIC_CSS_MAIN_CSS);
-+  html_source->AddResourcePath("static/js/1.chunk.js",      IDR_SODIUM_RESULT_STATIC_JS_1_JS);
++  html_source->AddResourcePath("static/js/2.chunk.js",      IDR_SODIUM_RESULT_STATIC_JS_2_JS);
 +  html_source->AddResourcePath("static/js/main.chunk.js",   IDR_SODIUM_RESULT_STATIC_JS_MAIN_JS);
 +  html_source->AddResourcePath("static/js/runtime~main.js", IDR_SODIUM_RESULT_STATIC_JS_RUNTIME_MAIN_JS);
 +  html_source->AddResourcePath("static/media/refresh.svg",  IDR_SODIUM_RESULT_STATIC_MEDIA_REFRESH_SVG);
