@@ -425,23 +425,41 @@ index fa8c2cd..eb7bfb4 100644
    // of the strings defined in privacy.json. The allowed values are specified
    // in webrtc_ip_handling_policy.h.
 diff --git a/content/public/renderer/render_frame.h b/content/public/renderer/render_frame.h
-index 292a3ab..6e8fba7 100644
+index 292a3ab..7faecb0 100644
 --- a/content/public/renderer/render_frame.h
 +++ b/content/public/renderer/render_frame.h
-@@ -274,6 +274,8 @@ class CONTENT_EXPORT RenderFrame : public IPC::Listener,
+@@ -274,6 +274,10 @@ class CONTENT_EXPORT RenderFrame : public IPC::Listener,
    virtual scoped_refptr<network::SharedURLLoaderFactory>
    GetURLLoaderFactory() = 0;
  
 +  virtual bool IsEnableSodium() = 0;
 +
++  virtual blink::WebString SodiumUserAgent() = 0;
++
   protected:
    ~RenderFrame() override {}
  
 diff --git a/content/renderer/render_frame_impl.cc b/content/renderer/render_frame_impl.cc
-index 5227073..e3d949b 100644
+index 5227073..34a7b56 100644
 --- a/content/renderer/render_frame_impl.cc
 +++ b/content/renderer/render_frame_impl.cc
-@@ -7406,4 +7406,8 @@ RenderFrameImpl::BuildServiceWorkerNetworkProviderForNavigation(
+@@ -45,6 +45,7 @@
+ #include "base/trace_event/trace_event.h"
+ #include "build/build_config.h"
+ #include "cc/base/switches.h"
++#include "components/version_info/version_info.h"
+ #include "content/common/accessibility_messages.h"
+ #include "content/common/associated_interfaces.mojom.h"
+ #include "content/common/content_constants_internal.h"
+@@ -81,6 +82,7 @@
+ #include "content/public/common/url_constants.h"
+ #include "content/public/common/url_loader_throttle.h"
+ #include "content/public/common/url_utils.h"
++#include "content/public/common/user_agent.h"
+ #include "content/public/renderer/browser_plugin_delegate.h"
+ #include "content/public/renderer/content_renderer_client.h"
+ #include "content/public/renderer/context_menu_client.h"
+@@ -7406,4 +7408,16 @@ RenderFrameImpl::BuildServiceWorkerNetworkProviderForNavigation(
        std::move(controller_service_worker_info), std::move(fallback_factory));
  }
  
@@ -449,39 +467,50 @@ index 5227073..e3d949b 100644
 +  return render_view_->renderer_preferences_.enable_sodium;
 +}
 +
++blink::WebString RenderFrameImpl::SodiumUserAgent() {
++  std::string product = version_info::GetProductNameAndVersionForUserAgent();
++#if defined(OS_ANDROID)
++  product += " Mobile";
++#endif
++  return WebString::FromUTF8(content::BuildUserAgentFromProduct(product));
++}
++
  }  // namespace content
 diff --git a/content/renderer/render_frame_impl.h b/content/renderer/render_frame_impl.h
-index 4f8775b..28bb632 100644
+index 4f8775b..a276cb9 100644
 --- a/content/renderer/render_frame_impl.h
 +++ b/content/renderer/render_frame_impl.h
-@@ -890,6 +890,8 @@ class CONTENT_EXPORT RenderFrameImpl
+@@ -890,6 +890,10 @@ class CONTENT_EXPORT RenderFrameImpl
    void DidCancelResponse(int request_id);
    void DidReceiveTransferSizeUpdate(int request_id, int received_data_length);
  
 +  bool IsEnableSodium() override;
 +
++  blink::WebString SodiumUserAgent() override;
++
   protected:
    explicit RenderFrameImpl(CreateParams params);
  
 diff --git a/third_party/blink/public/web/web_local_frame_client.h b/third_party/blink/public/web/web_local_frame_client.h
-index ce42ab8..1789464 100644
+index ce42ab8..0881b3a 100644
 --- a/third_party/blink/public/web/web_local_frame_client.h
 +++ b/third_party/blink/public/web/web_local_frame_client.h
-@@ -722,6 +722,9 @@ class BLINK_EXPORT WebLocalFrameClient {
+@@ -722,6 +722,10 @@ class BLINK_EXPORT WebLocalFrameClient {
    // header. An empty string indicates that no DNT header will be send.
    virtual WebString DoNotTrackValue() { return WebString(); }
  
 +  // Sodium ----------------------------------------------------
 +  virtual bool IsEnableSodium() { return false; }
++  virtual WebString SodiumUserAgent() { return WebString(); }
 +
    // WebGL ------------------------------------------------------
  
    // Asks the embedder whether WebGL is blocked for the WebFrame. This call is
 diff --git a/third_party/blink/renderer/core/exported/local_frame_client_impl.cc b/third_party/blink/renderer/core/exported/local_frame_client_impl.cc
-index 0fb5624..ea8b1fb 100644
+index 0fb5624..2df2949 100644
 --- a/third_party/blink/renderer/core/exported/local_frame_client_impl.cc
 +++ b/third_party/blink/renderer/core/exported/local_frame_client_impl.cc
-@@ -798,6 +798,10 @@ String LocalFrameClientImpl::DoNotTrackValue() {
+@@ -798,6 +798,14 @@ String LocalFrameClientImpl::DoNotTrackValue() {
    return String();
  }
  
@@ -489,43 +518,52 @@ index 0fb5624..ea8b1fb 100644
 +  return web_frame_->Client()->IsEnableSodium();
 +}
 +
++String LocalFrameClientImpl::SodiumUserAgent() {
++  return web_frame_->Client()->SodiumUserAgent();
++}
++
  // Called when the FrameLoader goes into a state in which a new page load
  // will occur.
  void LocalFrameClientImpl::TransitionToCommittedForNewPage() {
 diff --git a/third_party/blink/renderer/core/exported/local_frame_client_impl.h b/third_party/blink/renderer/core/exported/local_frame_client_impl.h
-index 92e532c..d762b16 100644
+index 92e532c..fac8692 100644
 --- a/third_party/blink/renderer/core/exported/local_frame_client_impl.h
 +++ b/third_party/blink/renderer/core/exported/local_frame_client_impl.h
-@@ -166,6 +166,7 @@ class LocalFrameClientImpl final : public LocalFrameClient {
+@@ -166,6 +166,8 @@ class LocalFrameClientImpl final : public LocalFrameClient {
        std::unique_ptr<WebDocumentLoader::ExtraData> extra_data) override;
    WTF::String UserAgent() override;
    WTF::String DoNotTrackValue() override;
 +  bool IsEnableSodium() override;
++  WTF::String SodiumUserAgent() override;
    void TransitionToCommittedForNewPage() override;
    LocalFrame* CreateFrame(const WTF::AtomicString& name,
                            HTMLFrameOwnerElement*) override;
 diff --git a/third_party/blink/renderer/core/frame/local_frame_client.h b/third_party/blink/renderer/core/frame/local_frame_client.h
-index 983cd3c..dd2563c 100644
+index 983cd3c..2c8efad 100644
 --- a/third_party/blink/renderer/core/frame/local_frame_client.h
 +++ b/third_party/blink/renderer/core/frame/local_frame_client.h
-@@ -245,6 +245,8 @@ class CORE_EXPORT LocalFrameClient : public FrameClient {
+@@ -245,6 +245,10 @@ class CORE_EXPORT LocalFrameClient : public FrameClient {
  
    virtual String DoNotTrackValue() = 0;
  
 +  virtual bool IsEnableSodium() = 0;
 +
++  virtual String SodiumUserAgent() = 0;
++
    virtual void TransitionToCommittedForNewPage() = 0;
  
    virtual LocalFrame* CreateFrame(const AtomicString& name,
 diff --git a/third_party/blink/renderer/core/loader/empty_clients.h b/third_party/blink/renderer/core/loader/empty_clients.h
-index 21657f6..0e0f065 100644
+index 21657f6..d139021 100644
 --- a/third_party/blink/renderer/core/loader/empty_clients.h
 +++ b/third_party/blink/renderer/core/loader/empty_clients.h
-@@ -305,6 +305,8 @@ class CORE_EXPORT EmptyLocalFrameClient : public LocalFrameClient {
+@@ -305,6 +305,10 @@ class CORE_EXPORT EmptyLocalFrameClient : public LocalFrameClient {
  
    String DoNotTrackValue() override { return String(); }
  
 +  bool IsEnableSodium() override { return false; }
++
++  String SodiumUserAgent() override { return ""; }
 +
    void TransitionToCommittedForNewPage() override {}
  

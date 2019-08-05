@@ -1,28 +1,29 @@
-diff --git a/content/common/BUILD.gn b/content/common/BUILD.gn
-index 1940f0d..5e58878 100644
---- a/content/common/BUILD.gn
-+++ b/content/common/BUILD.gn
-@@ -249,6 +249,7 @@ source_set("common") {
-     "single_request_url_loader_factory.h",
-     "skia_utils.cc",
-     "skia_utils.h",
+diff --git a/url/BUILD.gn b/url/BUILD.gn
+index 1365fce..7f03106 100644
+--- a/url/BUILD.gn
++++ b/url/BUILD.gn
+@@ -24,6 +24,8 @@ component("url") {
+     "origin.h",
+     "scheme_host_port.cc",
+     "scheme_host_port.h",
 +    "sodium_whitelist.cc",
-     "swapped_out_messages.cc",
-     "swapped_out_messages.h",
-     "tab_switching_time_callback.cc",
-diff --git a/content/common/sodium_whitelist.cc b/content/common/sodium_whitelist.cc
++    "sodium_whitelist.h",
+     "third_party/mozilla/url_parse.cc",
+     "third_party/mozilla/url_parse.h",
+     "url_canon.cc",
+diff --git a/url/sodium_whitelist.cc b/url/sodium_whitelist.cc
 new file mode 100644
-index 0000000..2ec4fb6
+index 0000000..bff480f
 --- /dev/null
-+++ b/content/common/sodium_whitelist.cc
++++ b/url/sodium_whitelist.cc
 @@ -0,0 +1,55 @@
-+#include "content/public/common/sodium_whitelist.h"
++#include "url/sodium_whitelist.h"
 +
 +#include <array>
 +#include <regex>
 +#include "base/no_destructor.h"
 +
-+namespace content {
++namespace url {
 +namespace SodiumWhitelist {
 +
 +bool IsDomainAllowed(const GURL& url, const std::vector<const std::regex>* whitelist) {
@@ -70,39 +71,27 @@ index 0000000..2ec4fb6
 +}
 +
 +}  // namespace SodiumWhitelist
-+}  // namespace content
-diff --git a/content/public/common/BUILD.gn b/content/public/common/BUILD.gn
-index c94dc1a..680a0b1 100644
---- a/content/public/common/BUILD.gn
-+++ b/content/public/common/BUILD.gn
-@@ -211,6 +211,7 @@ jumbo_source_set("common_sources") {
-     "simple_connection_filter.cc",
-     "simple_connection_filter.h",
-     "socket_permission_request.h",
-+    "sodium_whitelist.h",
-     "stop_find_action.h",
-     "storage_quota_params.h",
-     "three_d_api_types.h",
-diff --git a/content/public/common/sodium_whitelist.h b/content/public/common/sodium_whitelist.h
++}  // namespace url
+diff --git a/url/sodium_whitelist.h b/url/sodium_whitelist.h
 new file mode 100644
-index 0000000..a308f60
+index 0000000..9bab1d6
 --- /dev/null
-+++ b/content/public/common/sodium_whitelist.h
++++ b/url/sodium_whitelist.h
 @@ -0,0 +1,17 @@
-+#ifndef CONTENT_PUBLIC_COMMON_SODIUM_WHITELIST_H_
-+#define CONTENT_PUBLIC_COMMON_SODIUM_WHITELIST_H_
++#ifndef URL_SODIUM_WHITELIST_H_
++#define URL_SODIUM_WHITELIST_H_
 +
-+#include "content/common/content_export.h"
++#include "url/url_export.h"
 +#include "url/gurl.h"
 +
-+namespace content {
++namespace url {
 +namespace SodiumWhitelist {
 +
-+CONTENT_EXPORT bool IsAllowSodiumJs(const GURL& url);
-+CONTENT_EXPORT bool IsSodiumResultPage(const GURL& url);
-+CONTENT_EXPORT bool IsForceDesktopMode(const GURL& url);
++URL_EXPORT bool IsAllowSodiumJs(const GURL& url);
++URL_EXPORT bool IsSodiumResultPage(const GURL& url);
++URL_EXPORT bool IsForceDesktopMode(const GURL& url);
 +
 +}  // namespace SodiumWhitelist
-+}  // namespace content
++}  // namespace url
 +
-+#endif  // CONTENT_PUBLIC_COMMON_SODIUM_WHITELIST_H_
++#endif  // URL_SODIUM_WHITELIST_H_

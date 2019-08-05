@@ -4,7 +4,7 @@
 * https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/core/LICENSE-LGPL-2.1
 
 diff --git a/third_party/blink/renderer/core/timing/performance.cc b/third_party/blink/renderer/core/timing/performance.cc
-index abab35e..18b94dc 100644
+index abab35e..e5df882 100644
 --- a/third_party/blink/renderer/core/timing/performance.cc
 +++ b/third_party/blink/renderer/core/timing/performance.cc
 @@ -38,6 +38,8 @@
@@ -20,7 +20,7 @@ index abab35e..18b94dc 100644
  #include "third_party/blink/renderer/platform/weborigin/security_origin.h"
  #include "third_party/blink/renderer/platform/wtf/std_lib_extras.h"
  #include "third_party/blink/renderer/platform/wtf/time.h"
-+#include "content/public/common/sodium_whitelist.h"
++#include "url/sodium_whitelist.h"
  
  namespace blink {
  
@@ -33,7 +33,7 @@ index abab35e..18b94dc 100644
 +    LocalFrame* frame = window->GetFrame();
 +    if (frame) {
 +      GURL url = GURL(frame->GetDocument()->Url());
-+      if (frame->Client()->IsEnableSodium() && content::SodiumWhitelist::IsAllowSodiumJs(url)) {
++      if (frame->Client()->IsEnableSodium() && url::SodiumWhitelist::IsAllowSodiumJs(url)) {
 +        return true;
 +      }
 +    }

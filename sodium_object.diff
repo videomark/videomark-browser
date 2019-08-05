@@ -386,10 +386,10 @@ index 1b46d11..6571b5c 100644
            "srcobject/html_media_element_src_object.idl",
 diff --git a/third_party/blink/renderer/modules/sodium/BUILD.gn b/third_party/blink/renderer/modules/sodium/BUILD.gn
 new file mode 100644
-index 0000000..ccf32dd
+index 0000000..117b0aa
 --- /dev/null
 +++ b/third_party/blink/renderer/modules/sodium/BUILD.gn
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,14 @@
 +import("//third_party/blink/renderer/modules/modules.gni")
 +
 +blink_modules_sources("sodium") {
@@ -402,10 +402,6 @@ index 0000000..ccf32dd
 +    "sodium.h",
 +    "window_sodium.cc",
 +    "window_sodium.h",
-+  ]
-+
-+  deps = [
-+    "//content/public/common",
 +  ]
 +}
 diff --git a/third_party/blink/renderer/modules/sodium/DEPS b/third_party/blink/renderer/modules/sodium/DEPS
@@ -420,18 +416,17 @@ index 0000000..6639f0a
 +]
 diff --git a/third_party/blink/renderer/modules/sodium/sodium.cc b/third_party/blink/renderer/modules/sodium/sodium.cc
 new file mode 100644
-index 0000000..2f79118
+index 0000000..1d6380c
 --- /dev/null
 +++ b/third_party/blink/renderer/modules/sodium/sodium.cc
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,26 @@
 +#include "third_party/blink/renderer/modules/sodium/sodium.h"
-+
-+#include "components/version_info/version_info.h"
-+#include "content/public/common/user_agent.h"
 +
 +namespace blink {
 +
-+Sodium::Sodium(LocalFrame* frame) : ContextClient(frame) {}
++Sodium::Sodium(LocalFrame* frame, String user_agent) : ContextClient(frame) {
++  user_agent_ = user_agent;
++}
 +
 +void Sodium::Trace(blink::Visitor* visitor) {
 +  visitor->Trace(sodium_storage_);
@@ -440,11 +435,7 @@ index 0000000..2f79118
 +}
 +
 +String Sodium::userAgent() {
-+  std::string product = version_info::GetProductNameAndVersionForUserAgent();
-+#if defined(OS_ANDROID)
-+  product += " Mobile";
-+#endif
-+  return String(content::BuildUserAgentFromProduct(product).c_str());
++  return user_agent_;
 +}
 +
 +SodiumStorage* Sodium::storage() {
@@ -457,10 +448,10 @@ index 0000000..2f79118
 +}  // namespace blink
 diff --git a/third_party/blink/renderer/modules/sodium/sodium.h b/third_party/blink/renderer/modules/sodium/sodium.h
 new file mode 100644
-index 0000000..f5b946d
+index 0000000..a331469
 --- /dev/null
 +++ b/third_party/blink/renderer/modules/sodium/sodium.h
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,31 @@
 +#ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_SODIUM_SODIUM_H_
 +#define THIRD_PARTY_BLINK_RENDERER_MODULES_SODIUM_SODIUM_H_
 +
@@ -478,13 +469,14 @@ index 0000000..f5b946d
 +  USING_GARBAGE_COLLECTED_MIXIN(Sodium);
 +
 + public:
-+  explicit Sodium(LocalFrame*);
++  explicit Sodium(LocalFrame*, String);
 +  void Trace(blink::Visitor*) override;
 +
 +  String userAgent();
 +  SodiumStorage* storage();
 +
 + private:
++  String user_agent_;
 +  Member<SodiumStorage> sodium_storage_;
 +};
 +
@@ -1089,7 +1081,7 @@ index 0000000..3c3bcb7
 +};
 diff --git a/third_party/blink/renderer/modules/sodium/window_sodium.cc b/third_party/blink/renderer/modules/sodium/window_sodium.cc
 new file mode 100644
-index 0000000..1d8d3a6
+index 0000000..0c247d4
 --- /dev/null
 +++ b/third_party/blink/renderer/modules/sodium/window_sodium.cc
 @@ -0,0 +1,44 @@
@@ -1098,7 +1090,7 @@ index 0000000..1d8d3a6
 +#include "third_party/blink/renderer/core/frame/local_dom_window.h"
 +#include "third_party/blink/renderer/core/frame/local_frame_client.h"
 +#include "third_party/blink/renderer/modules/sodium/sodium.h"
-+#include "content/public/common/sodium_whitelist.h"
++#include "url/sodium_whitelist.h"
 +
 +namespace blink {
 +
@@ -1128,9 +1120,9 @@ index 0000000..1d8d3a6
 +  LocalFrame* frame = GetSupplementable()->GetFrame();
 +  if (frame) {
 +    GURL url = GURL(frame->GetDocument()->Url());
-+    if (!sodium_ && (content::SodiumWhitelist::IsSodiumResultPage(url)
-+        || (frame->Client()->IsEnableSodium() && content::SodiumWhitelist::IsAllowSodiumJs(url)))) {
-+      sodium_ = new Sodium(frame);
++    if (!sodium_ && (url::SodiumWhitelist::IsSodiumResultPage(url)
++        || (frame->Client()->IsEnableSodium() && url::SodiumWhitelist::IsAllowSodiumJs(url)))) {
++      sodium_ = new Sodium(frame, frame->Client()->SodiumUserAgent());
 +    }
 +  }
 +  return sodium_.Get();
