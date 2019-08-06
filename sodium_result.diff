@@ -50,10 +50,10 @@ index 9028535..24e4afa 100644
          History
        </message>
 diff --git a/chrome/browser/browser_resources.grd b/chrome/browser/browser_resources.grd
-index 994e15e..2996438 100644
+index 994e15e..528c063 100644
 --- a/chrome/browser/browser_resources.grd
 +++ b/chrome/browser/browser_resources.grd
-@@ -92,6 +92,16 @@
+@@ -92,6 +92,19 @@
        <if expr="not is_android">
          <include name="IDR_ABOUT_SYS_HTML" file="resources\about_sys\about_sys.html" flattenhtml="true" type="BINDATA" />
        </if>
@@ -65,6 +65,9 @@ index 994e15e..2996438 100644
 +      <include name="IDR_SODIUM_RESULT_STATIC_JS_2_JS" file="resources\sodium_result\static\js\2.chunk.js" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_JS_MAIN_JS" file="resources\sodium_result\static\js\main.chunk.js" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_JS_RUNTIME_MAIN_JS" file="resources\sodium_result\static\js\runtime~main.js" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_ABOUT_HELP_SVG" file="resources\sodium_result\static\media\about-help.svg" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_DINO_PNG" file="resources\sodium_result\static\media\dino.png" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_NOIMAGE_SVG" file="resources\sodium_result\static\media\noimage.svg" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_REFRESH_SVG" file="resources\sodium_result\static\media\refresh.svg" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_TIMES_SVG" file="resources\sodium_result\static\media\times.svg" type="BINDATA" skip_minify="true" compress="gzip" />
        <include name="IDR_ACCESSIBILITY_HTML" file="resources\accessibility\accessibility.html" flattenhtml="true" allowexternalscript="true" compress="gzip" type="BINDATA" />
@@ -106,10 +109,10 @@ index ce230a0..82249e2 100644
     * OS Specific #defines
 diff --git a/chrome/browser/ui/webui/sodium_result.cc b/chrome/browser/ui/webui/sodium_result.cc
 new file mode 100644
-index 0000000..7c4b7ce
+index 0000000..be08b344
 --- /dev/null
 +++ b/chrome/browser/ui/webui/sodium_result.cc
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,43 @@
 +#include "chrome/browser/ui/webui/sodium_result.h"
 +
 +#include <memory>
@@ -133,6 +136,9 @@ index 0000000..7c4b7ce
 +  html_source->AddResourcePath("static/js/2.chunk.js",      IDR_SODIUM_RESULT_STATIC_JS_2_JS);
 +  html_source->AddResourcePath("static/js/main.chunk.js",   IDR_SODIUM_RESULT_STATIC_JS_MAIN_JS);
 +  html_source->AddResourcePath("static/js/runtime~main.js", IDR_SODIUM_RESULT_STATIC_JS_RUNTIME_MAIN_JS);
++  html_source->AddResourcePath("static/media/about-help.svg", IDR_SODIUM_RESULT_STATIC_MEDIA_ABOUT_HELP_SVG);
++  html_source->AddResourcePath("static/media/dino.png",       IDR_SODIUM_RESULT_STATIC_MEDIA_DINO_PNG);
++  html_source->AddResourcePath("static/media/noimage.svg",    IDR_SODIUM_RESULT_STATIC_MEDIA_NOIMAGE_SVG);
 +  html_source->AddResourcePath("static/media/refresh.svg",  IDR_SODIUM_RESULT_STATIC_MEDIA_REFRESH_SVG);
 +  html_source->AddResourcePath("static/media/times.svg",    IDR_SODIUM_RESULT_STATIC_MEDIA_TIMES_SVG);
 +
