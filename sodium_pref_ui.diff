@@ -1,8 +1,20 @@
+diff --git a/chrome/android/chrome_java_sources.gni b/chrome/android/chrome_java_sources.gni
+index 6ab9f4d..74ef180 100644
+--- a/chrome/android/chrome_java_sources.gni
++++ b/chrome/android/chrome_java_sources.gni
+@@ -1242,6 +1242,7 @@ chrome_java_sources = [
+   "java/src/org/chromium/chrome/browser/preferences/SeekBarLinkedCheckBoxPreference.java",
+   "java/src/org/chromium/chrome/browser/preferences/SeekBarPreference.java",
+   "java/src/org/chromium/chrome/browser/preferences/SignInPreference.java",
++  "java/src/org/chromium/chrome/browser/preferences/SodiumPreference.java",
+   "java/src/org/chromium/chrome/browser/preferences/SpinnerPreference.java",
+   "java/src/org/chromium/chrome/browser/preferences/SyncAndServicesPreferences.java",
+   "java/src/org/chromium/chrome/browser/preferences/SyncErrorCardPreference.java",
 diff --git a/chrome/android/java/res/menu/main_menu.xml b/chrome/android/java/res/menu/main_menu.xml
-index 3b5aa0e..b0518c7 100644
+index 4580a99..d444b04 100644
 --- a/chrome/android/java/res/menu/main_menu.xml
 +++ b/chrome/android/java/res/menu/main_menu.xml
-@@ -74,6 +74,16 @@
+@@ -76,6 +76,16 @@
              android:icon="@drawable/reader_mode_prefs_icon" />
          <item android:id="@+id/preferences_id"
              android:title="@string/menu_preferences" />
@@ -20,58 +32,64 @@ index 3b5aa0e..b0518c7 100644
              android:title="@string/menu_help" />
          <item android:id="@+id/enter_vr_id"
 diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/java/res/xml/main_preferences.xml
-index cfd982f..5ff4d44 100644
+index 8be6e7d..d8921466 100644
 --- a/chrome/android/java/res/xml/main_preferences.xml
 +++ b/chrome/android/java/res/xml/main_preferences.xml
-@@ -60,39 +60,44 @@
-         android:order="10"
+@@ -71,44 +71,49 @@
+         android:order="12"
          android:title="@string/prefs_section_advanced"/>
      <Preference
 +        android:fragment="org.chromium.chrome.browser.preferences.SodiumPreference"
 +        android:key="sodium"
-+        android:order="11"
++        android:order="13"
 +        android:title="@string/sodium_title"/>
 +    <Preference
          android:fragment="org.chromium.chrome.browser.preferences.privacy.PrivacyPreferences"
          android:key="privacy"
--        android:order="11"
-+        android:order="12"
+-        android:order="13"
++        android:order="14"
          android:title="@string/prefs_privacy"/>
      <Preference
          android:fragment="org.chromium.chrome.browser.preferences.AccessibilityPreferences"
          android:key="accessibility"
--        android:order="12"
-+        android:order="13"
+-        android:order="14"
++        android:order="15"
          android:title="@string/prefs_accessibility"/>
      <Preference
          android:fragment="org.chromium.chrome.browser.preferences.website.SiteSettingsPreferences"
          android:key="content_settings"
--        android:order="13"
-+        android:order="14"
+-        android:order="15"
++        android:order="16"
          android:title="@string/prefs_site_settings"/>
      <Preference
          android:fragment="org.chromium.chrome.browser.preferences.languages.LanguagesPreferences"
          android:key="languages"
--        android:order="14"
-+        android:order="15"
+-        android:order="16"
++        android:order="17"
          android:title="@string/prefs_languages"/>
      <org.chromium.chrome.browser.preferences.ChromeBasePreference
-         android:fragment="org.chromium.chrome.browser.preferences.datareduction.DataReductionPreferences"
+         android:fragment="org.chromium.chrome.browser.preferences.datareduction.DataReductionPreferenceFragment"
          android:key="data_reduction"
--        android:order="15"
-+        android:order="16"
-         android:title="@string/data_reduction_title"/>
+-        android:order="17"
++        android:order="18"
+         android:title="@string/data_reduction_title_lite_mode"/>
      <org.chromium.chrome.browser.preferences.ChromeBasePreference
          android:fragment="org.chromium.chrome.browser.preferences.download.DownloadPreferences"
          android:key="downloads"
--        android:order="16"
-+        android:order="17"
+-        android:order="18"
++        android:order="19"
          android:title="@string/menu_downloads"/>
+     <Preference
+         android:fragment="org.chromium.chrome.browser.preferences.developer.DeveloperPreferences"
+         android:key="developer"
+-        android:order="19"
++        android:order="20"
+         android:title="Developer options"/>
      <Preference
          android:fragment="org.chromium.chrome.browser.preferences.AboutChromePreferences"
          android:key="about_chrome"
--        android:order="17"
-+        android:order="18"
+-        android:order="20"
++        android:order="21"
          android:title="@string/prefs_about_chrome"/>
  
  </PreferenceScreen>
@@ -98,12 +116,12 @@ index 0000000..673aa03
 +
 +</PreferenceScreen>
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
-index 4752e75e40..852b7a2 100644
+index 5b93ff3..9e47190 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
-@@ -2116,6 +2116,10 @@ public abstract class ChromeActivity extends AsyncInitializationActivity
-             final boolean usingDesktopUserAgent = currentTab.getUseDesktopUserAgent();
-             currentTab.setUseDesktopUserAgent(!usingDesktopUserAgent, reloadOnChange);
+@@ -2204,6 +2204,10 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
+             currentTab.getWebContents().getNavigationController().setUseDesktopUserAgent(
+                     !usingDesktopUserAgent, reloadOnChange);
              RecordUserAction.record("MobileMenuRequestDesktopSite");
 +        } else if (id == R.id.enable_sodium_id || id == R.id.enable_sodium_check_id) {
 +            final boolean reloadOnChange = !currentTab.isNativePage();
@@ -112,11 +130,11 @@ index 4752e75e40..852b7a2 100644
          } else if (id == R.id.reader_mode_prefs_id) {
              DomDistillerUIUtils.openSettings(currentTab.getWebContents());
          } else {
-diff --git a/chrome/android/java/src/org/chromium/chrome/browser/appmenu/AppMenuPropertiesDelegate.java b/chrome/android/java/src/org/chromium/chrome/browser/appmenu/AppMenuPropertiesDelegate.java
-index 6388f51..5c422bc 100644
---- a/chrome/android/java/src/org/chromium/chrome/browser/appmenu/AppMenuPropertiesDelegate.java
-+++ b/chrome/android/java/src/org/chromium/chrome/browser/appmenu/AppMenuPropertiesDelegate.java
-@@ -196,6 +196,7 @@ public class AppMenuPropertiesDelegate {
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/appmenu/AppMenuPropertiesDelegateImpl.java b/chrome/android/java/src/org/chromium/chrome/browser/appmenu/AppMenuPropertiesDelegateImpl.java
+index f1de9d8..c3fb3b4 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/appmenu/AppMenuPropertiesDelegateImpl.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/appmenu/AppMenuPropertiesDelegateImpl.java
+@@ -240,6 +240,7 @@ public class AppMenuPropertiesDelegateImpl implements AppMenuPropertiesDelegate
              prepareAddToHomescreenMenuItem(menu, currentTab, canShowHomeScreenMenuItem);
  
              updateRequestDesktopSiteMenuItem(menu, currentTab, true /* can show */);
@@ -124,10 +142,11 @@ index 6388f51..5c422bc 100644
  
              // Only display reader mode settings menu option if the current page is in reader mode.
              menu.findItem(R.id.reader_mode_prefs_id)
-@@ -436,6 +437,38 @@ public class AppMenuPropertiesDelegate {
+@@ -474,6 +475,38 @@ public class AppMenuPropertiesDelegateImpl implements AppMenuPropertiesDelegate
+                         : mContext.getString(R.string.menu_request_desktop_site_off));
      }
  
-     /**
++    /**
 +     * @param menu {@link Menu} for enable sodium.
 +     * @param currentTab      Current tab being displayed.
 +     */
@@ -155,19 +174,18 @@ index 6388f51..5c422bc 100644
 +        // This title doesn't seem to be displayed by Android, but it is used to set up
 +        // accessibility text in {@link AppMenuAdapter#setupMenuButton}.
 +        menuLabel.setTitleCondensed(enabled
-+                        ? mActivity.getString(R.string.sodium_on)
-+                        : mActivity.getString(R.string.sodium_off));
++                        ? mContext.getString(R.string.sodium_on)
++                        : mContext.getString(R.string.sodium_off));
 +    }
 +
-+    /**
-      * A notification that the header view has finished inflating.
-      * @param view The view that was inflated.
-      * @param appMenu The menu the view is inside of.
+     @Override
+     public boolean isTranslateMenuItemVisible(Tab tab) {
+         String url = tab.getUrl();
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabAppMenuPropertiesDelegate.java b/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabAppMenuPropertiesDelegate.java
-index 3baf024..8f5bb68 100644
+index 300de08..635aafa 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabAppMenuPropertiesDelegate.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabAppMenuPropertiesDelegate.java
-@@ -173,6 +173,7 @@ public class CustomTabAppMenuPropertiesDelegate extends AppMenuPropertiesDelegat
+@@ -203,6 +203,7 @@ public class CustomTabAppMenuPropertiesDelegate extends AppMenuPropertiesDelegat
  
              updateRequestDesktopSiteMenuItem(menu, currentTab, requestDesktopSiteVisible);
              prepareAddToHomescreenMenuItem(menu, currentTab, addToHomeScreenVisible);
@@ -176,21 +194,21 @@ index 3baf024..8f5bb68 100644
      }
  
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/preferences/MainPreferences.java b/chrome/android/java/src/org/chromium/chrome/browser/preferences/MainPreferences.java
-index bbfd005..163a442 100644
+index 1e03030..5e47ae0 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/preferences/MainPreferences.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/preferences/MainPreferences.java
-@@ -44,6 +44,7 @@ public class MainPreferences extends PreferenceFragment
-     public static final String PREF_HOMEPAGE = "homepage";
+@@ -47,6 +47,7 @@ public class MainPreferences extends PreferenceFragment
+     public static final String PREF_UI_THEME = "ui_theme";
      public static final String PREF_DATA_REDUCTION = "data_reduction";
      public static final String PREF_NOTIFICATIONS = "notifications";
 +    public static final String PREF_SODIUM = "sodium";
      public static final String PREF_LANGUAGES = "languages";
      public static final String PREF_DOWNLOADS = "downloads";
- 
-@@ -200,6 +201,9 @@ public class MainPreferences extends PreferenceFragment
+     public static final String PREF_DEVELOPER = "developer";
+@@ -223,6 +224,9 @@ public class MainPreferences extends PreferenceFragment
          ChromeBasePreference dataReduction =
                  (ChromeBasePreference) findPreference(PREF_DATA_REDUCTION);
-         dataReduction.setSummary(DataReductionPreferences.generateSummary(getResources()));
+         dataReduction.setSummary(DataReductionPreferenceFragment.generateSummary(getResources()));
 +
 +        Preference sodium = addPreferenceIfAbsent(PREF_SODIUM);
 +        setOnOffSummary(sodium, PrefServiceBridge.getInstance().isSodiumEnabled());
@@ -243,11 +261,11 @@ index 0000000..c79e682
 +    }
 +}
 diff --git a/chrome/android/java/strings/android_chrome_strings.grd b/chrome/android/java/strings/android_chrome_strings.grd
-index 9028535..8c6827f 100644
+index cd6f207..ac0399a 100644
 --- a/chrome/android/java/strings/android_chrome_strings.grd
 +++ b/chrome/android/java/strings/android_chrome_strings.grd
-@@ -651,6 +651,20 @@ CHAR-LIMIT guidelines:
-         Search and site suggestions disabled
+@@ -700,6 +700,20 @@ CHAR-LIMIT guidelines:
+         Turn on dark theme when your device's Battery Saver is on
        </message>
  
 +      <!-- Sodium preferences -->
@@ -267,15 +285,3 @@ index 9028535..8c6827f 100644
        <!-- Privacy preferences -->
        <message name="IDS_PREFS_PRIVACY" desc="Title for the Privacy preferences. [CHAR-LIMIT=32]">
          Privacy
-diff --git a/chrome/android/java_sources.gni b/chrome/android/java_sources.gni
-index 5deacf7..3be5d5d 100644
---- a/chrome/android/java_sources.gni
-+++ b/chrome/android/java_sources.gni
-@@ -1159,6 +1159,7 @@ chrome_java_sources = [
-   "java/src/org/chromium/chrome/browser/preferences/SeekBarPreference.java",
-   "java/src/org/chromium/chrome/browser/preferences/SigninExpandablePreferenceGroup.java",
-   "java/src/org/chromium/chrome/browser/preferences/SignInPreference.java",
-+  "java/src/org/chromium/chrome/browser/preferences/SodiumPreference.java",
-   "java/src/org/chromium/chrome/browser/preferences/SpinnerPreference.java",
-   "java/src/org/chromium/chrome/browser/preferences/SyncAndServicesPreferences.java",
-   "java/src/org/chromium/chrome/browser/preferences/SyncErrorCardPreference.java",

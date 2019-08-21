@@ -1,5 +1,5 @@
 diff --git a/chrome/android/java/res/menu/main_menu.xml b/chrome/android/java/res/menu/main_menu.xml
-index 3b5aa0e..b7785e08 100644
+index 4580a99..3c69051 100644
 --- a/chrome/android/java/res/menu/main_menu.xml
 +++ b/chrome/android/java/res/menu/main_menu.xml
 @@ -40,6 +40,8 @@
@@ -12,10 +12,10 @@ index 3b5aa0e..b7785e08 100644
              android:title="@string/menu_history" />
          <item android:id="@+id/downloads_menu_id"
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
-index 4752e75e40..e6f7b52 100644
+index 5b93ff3..d0067320 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
-@@ -2073,6 +2073,19 @@ public abstract class ChromeActivity extends AsyncInitializationActivity
+@@ -2153,6 +2153,18 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
          } else if (id == R.id.info_menu_id) {
              PageInfoController.show(
                      this, currentTab, null, PageInfoController.OpenedFromSource.MENU);
@@ -29,17 +29,16 @@ index 4752e75e40..e6f7b52 100644
 +                TabCreator tabCreator = getTabCreator(currentTab.isIncognito());
 +                if (tabCreator == null) return false;
 +
-+                tabCreator.createNewTab(new LoadUrlParams(url, PageTransition.LINK),
-+                        TabModel.TabLaunchType.FROM_LINK, getActivityTab());
++                tabCreator.createNewTab(new LoadUrlParams(url, PageTransition.LINK), TabLaunchType.FROM_LINK, getActivityTab());
 +            }
          } else if (id == R.id.open_history_menu_id) {
              if (NewTabPage.isNTPUrl(currentTab.getUrl())) {
                  NewTabPageUma.recordAction(NewTabPageUma.ACTION_OPENED_HISTORY_MANAGER);
 diff --git a/chrome/android/java/strings/android_chrome_strings.grd b/chrome/android/java/strings/android_chrome_strings.grd
-index 9028535..24e4afa 100644
+index cd6f207..69f5970 100644
 --- a/chrome/android/java/strings/android_chrome_strings.grd
 +++ b/chrome/android/java/strings/android_chrome_strings.grd
-@@ -2897,6 +2897,9 @@ To obtain new licenses, connect to the internet and play your downloaded content
+@@ -3055,6 +3055,9 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
        <message name="IDS_MENU_RECENT_TABS" desc="Menu item for opening the 'Recent tabs' page that shows recently closed tabs and pages the user has opened on his/her other devices. [CHAR-LIMIT=27]">
          Recent tabs
        </message>
@@ -50,12 +49,12 @@ index 9028535..24e4afa 100644
          History
        </message>
 diff --git a/chrome/browser/browser_resources.grd b/chrome/browser/browser_resources.grd
-index 994e15e..528c063 100644
+index c34b713..06883a5 100644
 --- a/chrome/browser/browser_resources.grd
 +++ b/chrome/browser/browser_resources.grd
-@@ -92,6 +92,19 @@
-       <if expr="not is_android">
-         <include name="IDR_ABOUT_SYS_HTML" file="resources\about_sys\about_sys.html" flattenhtml="true" type="BINDATA" />
+@@ -104,6 +104,19 @@
+         <include name="IDR_ABOUT_SYS_CSS" file="resources\about_sys\about_sys.css" compress="gzip" flattenhtml="true" type="BINDATA" />
+         <include name="IDR_ABOUT_SYS_JS" file="resources\about_sys\about_sys.js" compress="gzip" type="BINDATA" />
        </if>
 +      <include name="IDR_SODIUM_RESULT_INDEX_HTML" file="resources\sodium_result\index.html" flattenhtml="true" allowexternalscript="true" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_VIDEOMARK_64_PNG" file="resources\sodium_result\videomark-64.png" type="BINDATA" skip_minify="true" compress="gzip" />
@@ -74,10 +73,10 @@ index 994e15e..528c063 100644
        <include name="IDR_ACCESSIBILITY_CSS" file="resources\accessibility\accessibility.css" compress="gzip" type="BINDATA" />
        <include name="IDR_ACCESSIBILITY_JS" file="resources\accessibility\accessibility.js" flattenhtml="true" compress="gzip" type="BINDATA" />
 diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
-index ea8b1a6..a6bf379 100644
+index ff5b402..13b2d5f 100644
 --- a/chrome/browser/ui/BUILD.gn
 +++ b/chrome/browser/ui/BUILD.gn
-@@ -793,6 +793,8 @@ jumbo_split_static_library("ui") {
+@@ -329,6 +329,8 @@ jumbo_split_static_library("ui") {
      "webui/version_ui.h",
      "webui/webui_util.cc",
      "webui/webui_util.h",
@@ -85,9 +84,9 @@ index ea8b1a6..a6bf379 100644
 +    "webui/sodium_result.h",
    ]
  
-   if (safe_browsing_mode == 1) {
+   if (enable_vr) {
 diff --git a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
-index ce230a0..82249e2 100644
+index dab98c7..6ca2194 100644
 --- a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
 +++ b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
 @@ -64,6 +64,7 @@
@@ -98,7 +97,7 @@ index ce230a0..82249e2 100644
  #include "chrome/common/buildflags.h"
  #include "chrome/common/chrome_features.h"
  #include "chrome/common/pref_names.h"
-@@ -421,6 +422,8 @@ WebUIFactoryFunction GetWebUIFactoryFunction(WebUI* web_ui,
+@@ -427,6 +428,8 @@ WebUIFactoryFunction GetWebUIFactoryFunction(WebUI* web_ui,
      return &NewWebUI<UserActionsUI>;
    if (url.host_piece() == chrome::kChromeUIVersionHost)
      return &NewWebUI<VersionUI>;
@@ -107,12 +106,20 @@ index ce230a0..82249e2 100644
  
    /****************************************************************************
     * OS Specific #defines
+@@ -827,6 +830,7 @@ bool ChromeWebUIControllerFactory::IsWebUIAllowedToMakeNetworkRequests(
+   // If you are adding a new host to this list, please file a corresponding bug
+   // to track its removal. See https://crbug.com/829412 for the metabug.
+   return
++      origin.host() == chrome::kChromeUISodiumResultHost ||
+ #if BUILDFLAG(ENABLE_PRINT_PREVIEW)
+       // https://crbug.com/829414
+       origin.host() == chrome::kChromeUIPrintHost ||
 diff --git a/chrome/browser/ui/webui/sodium_result.cc b/chrome/browser/ui/webui/sodium_result.cc
 new file mode 100644
-index 0000000..be08b344
+index 0000000..ecfe1ec
 --- /dev/null
 +++ b/chrome/browser/ui/webui/sodium_result.cc
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,42 @@
 +#include "chrome/browser/ui/webui/sodium_result.h"
 +
 +#include <memory>
@@ -143,7 +150,6 @@ index 0000000..be08b344
 +  html_source->AddResourcePath("static/media/times.svg",    IDR_SODIUM_RESULT_STATIC_MEDIA_TIMES_SVG);
 +
 +  html_source->SetDefaultResource(IDR_SODIUM_RESULT_INDEX_HTML);
-+  html_source->UseGzip();
 +  return html_source;
 +}
 +
@@ -180,28 +186,28 @@ index 0000000..47ddfc0
 +
 +#endif  // CHROME_BROWSER_UI_WEBUI_SODIUM_RESULT_H_
 diff --git a/chrome/common/webui_url_constants.cc b/chrome/common/webui_url_constants.cc
-index 0b53823..fa28f4d 100644
+index 7cdbeb7..448fb73 100644
 --- a/chrome/common/webui_url_constants.cc
 +++ b/chrome/common/webui_url_constants.cc
-@@ -169,6 +169,8 @@ const char kChromeUIWelcomeWin10Host[] = "welcome-win10";
- const char kChromeUIWelcomeWin10URL[] = "chrome://welcome-win10/";
- const char kDeprecatedChromeUIHistoryFrameHost[] = "history-frame";
- const char kDeprecatedChromeUIHistoryFrameURL[] = "chrome://history-frame/";
+@@ -17,6 +17,8 @@ namespace chrome {
+ // Note: Add hosts to |kChromeHostURLs| at the bottom of this file to be listed by
+ // chrome://chrome-urls (about:about) and the built-in AutocompleteProvider.
+ 
 +const char kChromeUISodiumResultHost[] = "videomark";
 +const char kChromeUISodiumResultURL[] = "chrome://videomark/";
- 
- #if defined(OS_ANDROID)
- const char kChromeUIEocInternalsHost[] = "eoc-internals";
+ const char kChromeUIAboutHost[] = "about";
+ const char kChromeUIAboutURL[] = "chrome://about/";
+ const char kChromeUIAccessibilityHost[] = "accessibility";
 diff --git a/chrome/common/webui_url_constants.h b/chrome/common/webui_url_constants.h
-index 29dfa1a..8270795 100644
+index e0eef74..ca06427 100644
 --- a/chrome/common/webui_url_constants.h
 +++ b/chrome/common/webui_url_constants.h
-@@ -169,6 +169,8 @@ extern const char kChromeUIWelcomeWin10Host[];
- extern const char kChromeUIWelcomeWin10URL[];
- extern const char kDeprecatedChromeUIHistoryFrameHost[];
- extern const char kDeprecatedChromeUIHistoryFrameURL[];
+@@ -25,6 +25,8 @@ namespace chrome {
+ // Not all components have corresponding URLs and vice versa. Only add as
+ // needed.
+ // Please keep in alphabetical order, with OS/feature specific sections below.
 +extern const char kChromeUISodiumResultHost[];
 +extern const char kChromeUISodiumResultURL[];
- 
- #if defined(OS_ANDROID)
- extern const char kChromeUIEocInternalsHost[];
+ extern const char kChromeUIAboutHost[];
+ extern const char kChromeUIAboutURL[];
+ extern const char kChromeUIAccessibilityHost[];

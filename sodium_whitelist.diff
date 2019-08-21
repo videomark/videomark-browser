@@ -1,5 +1,5 @@
 diff --git a/url/BUILD.gn b/url/BUILD.gn
-index 1365fce..7f03106 100644
+index b52a228..e719c05 100644
 --- a/url/BUILD.gn
 +++ b/url/BUILD.gn
 @@ -24,6 +24,8 @@ component("url") {
@@ -74,22 +74,22 @@ index 0000000..bff480f
 +}  // namespace url
 diff --git a/url/sodium_whitelist.h b/url/sodium_whitelist.h
 new file mode 100644
-index 0000000..9bab1d6
+index 0000000..abdfbb2
 --- /dev/null
 +++ b/url/sodium_whitelist.h
 @@ -0,0 +1,17 @@
 +#ifndef URL_SODIUM_WHITELIST_H_
 +#define URL_SODIUM_WHITELIST_H_
 +
-+#include "url/url_export.h"
++#include "base/component_export.h"
 +#include "url/gurl.h"
 +
 +namespace url {
 +namespace SodiumWhitelist {
 +
-+URL_EXPORT bool IsAllowSodiumJs(const GURL& url);
-+URL_EXPORT bool IsSodiumResultPage(const GURL& url);
-+URL_EXPORT bool IsForceDesktopMode(const GURL& url);
++COMPONENT_EXPORT(URL) bool IsAllowSodiumJs(const GURL& url);
++COMPONENT_EXPORT(URL) bool IsSodiumResultPage(const GURL& url);
++COMPONENT_EXPORT(URL) bool IsForceDesktopMode(const GURL& url);
 +
 +}  // namespace SodiumWhitelist
 +}  // namespace url

@@ -4,29 +4,29 @@
 * https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/core/LICENSE-LGPL-2.1
 
 diff --git a/third_party/blink/renderer/core/timing/performance.cc b/third_party/blink/renderer/core/timing/performance.cc
-index abab35e..e5df882 100644
+index 4196f5c..f909a3e 100644
 --- a/third_party/blink/renderer/core/timing/performance.cc
 +++ b/third_party/blink/renderer/core/timing/performance.cc
-@@ -38,6 +38,8 @@
- #include "third_party/blink/renderer/core/dom/document.h"
+@@ -42,6 +42,8 @@
  #include "third_party/blink/renderer/core/dom/document_timing.h"
  #include "third_party/blink/renderer/core/dom/events/event.h"
+ #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 +#include "third_party/blink/renderer/core/frame/local_dom_window.h"
 +#include "third_party/blink/renderer/core/frame/local_frame_client.h"
  #include "third_party/blink/renderer/core/frame/local_frame.h"
  #include "third_party/blink/renderer/core/frame/use_counter.h"
- #include "third_party/blink/renderer/core/loader/document_load_timing.h"
-@@ -57,6 +59,7 @@
+ #include "third_party/blink/renderer/core/inspector/console_message.h"
+@@ -67,6 +69,7 @@
+ #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
  #include "third_party/blink/renderer/platform/weborigin/security_origin.h"
  #include "third_party/blink/renderer/platform/wtf/std_lib_extras.h"
- #include "third_party/blink/renderer/platform/wtf/time.h"
 +#include "url/sodium_whitelist.h"
  
  namespace blink {
  
-@@ -297,6 +300,17 @@ bool Performance::PassesTimingAllowCheck(
+@@ -428,6 +431,17 @@ bool Performance::PassesTimingAllowCheck(
+     const ResourceResponse& response,
      const SecurityOrigin& initiator_security_origin,
-     const AtomicString& original_timing_allow_origin,
      ExecutionContext* context) {
 +  LocalDOMWindow* window = context->ExecutingWindow();
 +  if (window) {
@@ -39,6 +39,6 @@ index abab35e..e5df882 100644
 +    }
 +  }
 +
-   const KURL& response_url = response.WasFetchedViaServiceWorker()
-                                  ? response.OriginalURLViaServiceWorker()
-                                  : response.Url();
+   const KURL& response_url = response.ResponseUrl();
+   scoped_refptr<const SecurityOrigin> resource_origin =
+       SecurityOrigin::Create(response_url);
