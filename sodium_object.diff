@@ -1186,15 +1186,3 @@ index 0000000..162c9c2
 +partial interface Window {
 +    readonly attribute Sodium sodium;
 +};
-diff --git a/third_party/blink/renderer/platform/bindings/callback_interface_base.h b/third_party/blink/renderer/platform/bindings/callback_interface_base.h
-index 5448946..dfaebdb 100644
---- a/third_party/blink/renderer/platform/bindings/callback_interface_base.h
-+++ b/third_party/blink/renderer/platform/bindings/callback_interface_base.h
-@@ -9,6 +9,7 @@
- #include "third_party/blink/renderer/platform/bindings/script_state.h"
- #include "third_party/blink/renderer/platform/bindings/trace_wrapper_v8_reference.h"
- #include "third_party/blink/renderer/platform/heap/handle.h"
-+#include "base/stl_util.h"
- 
- namespace blink {
- 

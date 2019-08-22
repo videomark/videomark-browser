@@ -1,29 +1,17 @@
 diff --git a/chrome/browser/browser_resources.grd b/chrome/browser/browser_resources.grd
-index c34b713..2d0596b 100644
+index c34b713..2c27338 100644
 --- a/chrome/browser/browser_resources.grd
 +++ b/chrome/browser/browser_resources.grd
-@@ -58,6 +58,8 @@
+@@ -58,6 +58,7 @@
        </if>
      </structures>
      <includes>
 +      <include name="IDR_SODIUM_JS" file="resources\sodium.js" type="BINDATA" skip_minify="true" />
-+      <include name="IDR_INJECT_SODIUM_JS" file="resources\inject_sodium.js" type="BINDATA" skip_minify="true" />
        <if expr="is_win or is_macosx or desktop_linux or chromeos">
          <include name="IDR_DISCARDS_MOJO_API_HTML" file="resources\discards\mojo_api.html" compress="gzip" allowexternalscript="true" type="BINDATA" />
          <include name="IDR_DISCARDS_DATABASE_TAB_HTML" file="resources\discards\database_tab.html" compress="gzip" allowexternalscript="true" type="BINDATA" />
-diff --git a/chrome/browser/resources/inject_sodium.js b/chrome/browser/resources/inject_sodium.js
-new file mode 100644
-index 0000000..c27f6fd
---- /dev/null
-+++ b/chrome/browser/resources/inject_sodium.js
-@@ -0,0 +1,5 @@
-+let target = document.getElementsByTagName("body")[0];
-+let script = document.createElement("script");
-+script.setAttribute("type", "text/javascript");
-+script.innerText = "$1";
-+target.appendChild(script);
 diff --git a/chrome/renderer/chrome_content_renderer_client.cc b/chrome/renderer/chrome_content_renderer_client.cc
-index 4f04b84..fe8c827 100644
+index 4f04b84..2746d4e 100644
 --- a/chrome/renderer/chrome_content_renderer_client.cc
 +++ b/chrome/renderer/chrome_content_renderer_client.cc
 @@ -41,6 +41,7 @@
@@ -49,7 +37,7 @@ index 4f04b84..fe8c827 100644
  
  #if defined(OS_ANDROID)
  #include "chrome/renderer/sandbox_status_extension_android.h"
-@@ -1465,6 +1468,27 @@ void ChromeContentRendererClient::AddImageContextMenuProperties(
+@@ -1465,6 +1468,21 @@ void ChromeContentRendererClient::AddImageContextMenuProperties(
    }
  }
  
@@ -64,20 +52,14 @@ index 4f04b84..fe8c827 100644
 +
 +  if (render_frame->IsMainFrame() && render_frame->IsEnableSodium() && url::SodiumWhitelist::IsAllowSodiumJs(url)) {
 +    base::StringPiece source_piece = ui::ResourceBundle::GetSharedInstance().GetRawDataResource(IDR_SODIUM_JS);
-+    //render_frame->ExecuteJavaScript(base::ASCIIToUTF16(source_piece));
-+
-+    base::StringPiece injector = ui::ResourceBundle::GetSharedInstance().GetRawDataResource(IDR_INJECT_SODIUM_JS);
-+    std::string source = base::ReplaceStringPlaceholders(injector, std::vector<std::string>{source_piece.as_string()}, nullptr);
-+    blink::WebScriptSource source_in = blink::WebScriptSource(WebString::FromUTF8(source.data(), source.size()));
-+    LOG(INFO) << "source_in.code: " << source_in.code.Utf8();
-+    frame->ExecuteScript(source_in);
++    render_frame->ExecuteJavaScript(base::UTF8ToUTF16(source_piece));
 +  }
 +}
 +
  void ChromeContentRendererClient::RunScriptsAtDocumentStart(
      content::RenderFrame* render_frame) {
  #if BUILDFLAG(ENABLE_EXTENSIONS)
-@@ -1481,6 +1505,8 @@ void ChromeContentRendererClient::RunScriptsAtDocumentEnd(
+@@ -1481,6 +1499,8 @@ void ChromeContentRendererClient::RunScriptsAtDocumentEnd(
        render_frame);
    // |render_frame| might be dead by now.
  #endif
