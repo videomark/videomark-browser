@@ -1,8 +1,8 @@
 diff --git a/chrome/browser/browser_resources.grd b/chrome/browser/browser_resources.grd
-index c34b713..2c27338 100644
+index c0cef30..300a89c 100644
 --- a/chrome/browser/browser_resources.grd
 +++ b/chrome/browser/browser_resources.grd
-@@ -58,6 +58,7 @@
+@@ -87,6 +87,7 @@
        </if>
      </structures>
      <includes>
@@ -11,7 +11,7 @@ index c34b713..2c27338 100644
          <include name="IDR_DISCARDS_MOJO_API_HTML" file="resources\discards\mojo_api.html" compress="gzip" allowexternalscript="true" type="BINDATA" />
          <include name="IDR_DISCARDS_DATABASE_TAB_HTML" file="resources\discards\database_tab.html" compress="gzip" allowexternalscript="true" type="BINDATA" />
 diff --git a/chrome/renderer/chrome_content_renderer_client.cc b/chrome/renderer/chrome_content_renderer_client.cc
-index 4f04b84..2746d4e 100644
+index ae7e073..ae5a7b5 100644
 --- a/chrome/renderer/chrome_content_renderer_client.cc
 +++ b/chrome/renderer/chrome_content_renderer_client.cc
 @@ -41,6 +41,7 @@
@@ -22,7 +22,7 @@ index 4f04b84..2746d4e 100644
  #include "chrome/grit/chromium_strings.h"
  #include "chrome/grit/generated_resources.h"
  #include "chrome/grit/renderer_resources.h"
-@@ -134,12 +135,14 @@
+@@ -136,12 +137,14 @@
  #include "third_party/blink/public/web/web_origin_trials.h"
  #include "third_party/blink/public/web/web_plugin_container.h"
  #include "third_party/blink/public/web/web_plugin_params.h"
@@ -37,8 +37,8 @@ index 4f04b84..2746d4e 100644
  
  #if defined(OS_ANDROID)
  #include "chrome/renderer/sandbox_status_extension_android.h"
-@@ -1465,6 +1468,21 @@ void ChromeContentRendererClient::AddImageContextMenuProperties(
-   }
+@@ -1472,6 +1475,21 @@ void ChromeContentRendererClient::RecordRapporURL(const std::string& metric,
+   rappor_recorder_->RecordRapporURL(metric, url);
  }
  
 +void InjectSodium(content::RenderFrame* render_frame) {
@@ -59,7 +59,7 @@ index 4f04b84..2746d4e 100644
  void ChromeContentRendererClient::RunScriptsAtDocumentStart(
      content::RenderFrame* render_frame) {
  #if BUILDFLAG(ENABLE_EXTENSIONS)
-@@ -1481,6 +1499,8 @@ void ChromeContentRendererClient::RunScriptsAtDocumentEnd(
+@@ -1488,6 +1506,8 @@ void ChromeContentRendererClient::RunScriptsAtDocumentEnd(
        render_frame);
    // |render_frame| might be dead by now.
  #endif

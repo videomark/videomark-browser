@@ -4,7 +4,7 @@
 * https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/core/LICENSE-LGPL-2.1
 
 diff --git a/third_party/blink/renderer/core/timing/performance.cc b/third_party/blink/renderer/core/timing/performance.cc
-index 4196f5c..f909a3e 100644
+index d51cc94..0e339d2 100644
 --- a/third_party/blink/renderer/core/timing/performance.cc
 +++ b/third_party/blink/renderer/core/timing/performance.cc
 @@ -42,6 +42,8 @@
@@ -14,9 +14,9 @@ index 4196f5c..f909a3e 100644
 +#include "third_party/blink/renderer/core/frame/local_dom_window.h"
 +#include "third_party/blink/renderer/core/frame/local_frame_client.h"
  #include "third_party/blink/renderer/core/frame/local_frame.h"
- #include "third_party/blink/renderer/core/frame/use_counter.h"
  #include "third_party/blink/renderer/core/inspector/console_message.h"
-@@ -67,6 +69,7 @@
+ #include "third_party/blink/renderer/core/loader/document_load_timing.h"
+@@ -68,6 +70,7 @@
  #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
  #include "third_party/blink/renderer/platform/weborigin/security_origin.h"
  #include "third_party/blink/renderer/platform/wtf/std_lib_extras.h"
@@ -24,7 +24,7 @@ index 4196f5c..f909a3e 100644
  
  namespace blink {
  
-@@ -428,6 +431,17 @@ bool Performance::PassesTimingAllowCheck(
+@@ -333,6 +336,17 @@ bool Performance::PassesTimingAllowCheck(
      const ResourceResponse& response,
      const SecurityOrigin& initiator_security_origin,
      ExecutionContext* context) {

@@ -1,7 +1,7 @@
 # VideoMark Browser (Custom Android Chromium patches)
 本リポジトリには Android 版 Chromium を Web VideoMark プロジェクト用にカスタマイズした VideoMark Browser をビルドする為の Chromium に対するパッチファイルを収めています。
 
-* 対応する Chromium バージョンは現在 76.0.3809.124 です。
+* 対応する Chromium バージョンは現在 77.0.3865.56 です。
 * chromium のソースコードリポジトリ
   * https://chromium.googlesource.com/chromium/src/  
 * リポジトリをダウンロード (fetch --nohooks android) したら、対応する Chromium バージョンのタグをチェックアウトしてパッチを適用し、ビルドしてください。

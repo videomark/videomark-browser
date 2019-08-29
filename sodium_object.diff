@@ -1,11 +1,11 @@
 diff --git a/content/browser/BUILD.gn b/content/browser/BUILD.gn
-index 62b6895..3b72c07 100644
+index aff5de7..65897e2 100644
 --- a/content/browser/BUILD.gn
 +++ b/content/browser/BUILD.gn
-@@ -1829,6 +1829,10 @@ jumbo_source_set("browser") {
+@@ -1826,6 +1826,10 @@ jumbo_source_set("browser") {
      "sms/sms_provider.h",
-     "sms/sms_service_impl.cc",
-     "sms/sms_service_impl.h",
+     "sms/sms_service.cc",
+     "sms/sms_service.h",
 +    "sodium/sodium_storage_value_store.cc",
 +    "sodium/sodium_storage_value_store.h",
 +    "sodium/sodium_storage_area_host_impl.cc",
@@ -14,18 +14,18 @@ index 62b6895..3b72c07 100644
      "speech/speech_recognition_dispatcher_host.h",
      "speech/speech_recognition_manager_impl.cc",
 diff --git a/content/browser/frame_host/render_frame_host_impl.cc b/content/browser/frame_host/render_frame_host_impl.cc
-index c1d0148..d6bbd3f 100644
+index d22ddde..b23bb071 100644
 --- a/content/browser/frame_host/render_frame_host_impl.cc
 +++ b/content/browser/frame_host/render_frame_host_impl.cc
-@@ -102,6 +102,7 @@
- #include "content/browser/renderer_host/render_widget_host_view_child_frame.h"
+@@ -104,6 +104,7 @@
  #include "content/browser/renderer_interface_binders.h"
  #include "content/browser/scoped_active_url.h"
+ #include "content/browser/sms/sms_service.h"
 +#include "content/browser/sodium/sodium_storage_area_host_impl.h"
  #include "content/browser/speech/speech_recognition_dispatcher_host.h"
  #include "content/browser/storage_partition_impl.h"
  #include "content/browser/wake_lock/wake_lock_service_impl.h"
-@@ -4097,6 +4098,9 @@ void RenderFrameHostImpl::RegisterMojoInterfaces() {
+@@ -4169,6 +4170,9 @@ void RenderFrameHostImpl::RegisterMojoInterfaces() {
                   base::Unretained(permission_service_context_.get())));
  
    registry_->AddInterface(
@@ -303,25 +303,25 @@ index 0000000..409f852
 +
 +#endif  // CONTENT_BROWSER_SODIUM_SODIUM_STORAGE_VALUE_STORE_H_
 diff --git a/content/public/app/content_browser_manifest.cc b/content/public/app/content_browser_manifest.cc
-index 20ec094..6f16d75 100644
+index b08b7e9..43f2df9 100644
 --- a/content/public/app/content_browser_manifest.cc
 +++ b/content/public/app/content_browser_manifest.cc
-@@ -236,6 +236,7 @@ const service_manager::Manifest& GetContentBrowserManifest() {
+@@ -242,6 +242,7 @@ const service_manager::Manifest& GetContentBrowserManifest() {
                    "blink.mojom.SharedWorkerConnector",
-                   "blink.mojom.SmsManager",
+                   "blink.mojom.SmsReceiver",
                    "blink.mojom.SpeechRecognizer",
 +                  "blink.mojom.SodiumStorageAreaHost",
                    "blink.mojom.TextSuggestionHost",
                    "blink.mojom.UnhandledTapNotifier",
                    "blink.mojom.WakeLockService",
 diff --git a/third_party/blink/public/mojom/BUILD.gn b/third_party/blink/public/mojom/BUILD.gn
-index 1f6d785..c112c3c 100644
+index c4cb62f..5dae67c 100644
 --- a/third_party/blink/public/mojom/BUILD.gn
 +++ b/third_party/blink/public/mojom/BUILD.gn
-@@ -110,6 +110,7 @@ mojom("mojom_platform") {
+@@ -117,6 +117,7 @@ mojom("mojom_platform") {
      "service_worker/service_worker_stream_handle.mojom",
      "site_engagement/site_engagement.mojom",
-     "sms/sms_manager.mojom",
+     "sms/sms_receiver.mojom",
 +    "sodium/sodium_storage_area.mojom",
      "speech/speech_recognition_error.mojom",
      "speech/speech_recognition_error_code.mojom",
@@ -349,10 +349,10 @@ index 0000000..8e1c032
 +  clear(string area) => ();
 +};
 diff --git a/third_party/blink/renderer/modules/BUILD.gn b/third_party/blink/renderer/modules/BUILD.gn
-index 1196b96..1da4033 100644
+index ca586dc..691cb4d 100644
 --- a/third_party/blink/renderer/modules/BUILD.gn
 +++ b/third_party/blink/renderer/modules/BUILD.gn
-@@ -146,6 +146,7 @@ target("jumbo_" + modules_target_type, "modules") {
+@@ -152,6 +152,7 @@ target("jumbo_" + modules_target_type, "modules") {
      "//third_party/blink/renderer/modules/service_worker",
      "//third_party/blink/renderer/modules/shapedetection",
      "//third_party/blink/renderer/modules/sms",
@@ -361,10 +361,10 @@ index 1196b96..1da4033 100644
      "//third_party/blink/renderer/modules/srcobject",
      "//third_party/blink/renderer/modules/storage",
 diff --git a/third_party/blink/renderer/modules/modules_idl_files.gni b/third_party/blink/renderer/modules/modules_idl_files.gni
-index 2dc9668..2ed107b 100644
+index cf616ab..54a6928 100644
 --- a/third_party/blink/renderer/modules/modules_idl_files.gni
 +++ b/third_party/blink/renderer/modules/modules_idl_files.gni
-@@ -315,6 +315,11 @@ modules_idl_files =
+@@ -326,6 +326,11 @@ modules_idl_files =
            "shapedetection/detected_text.idl",
            "shapedetection/face_detector.idl",
            "shapedetection/text_detector.idl",
@@ -376,10 +376,10 @@ index 2dc9668..2ed107b 100644
            "speech/speech_grammar.idl",
            "speech/speech_grammar_list.idl",
            "speech/speech_recognition.idl",
-@@ -943,6 +948,7 @@ modules_dependency_idl_files =
-           "remoteplayback/html_media_element_remote_playback.idl",
+@@ -972,6 +977,7 @@ modules_dependency_idl_files =
            "screen_orientation/screen_screen_orientation.idl",
            "service_worker/navigator_service_worker.idl",
+           "sms/navigator_sms.idl",
 +          "sodium/window_sodium.idl",
            "speech/window_speech.idl",
            "speech/window_speech_synthesis.idl",
