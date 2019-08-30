@@ -194,7 +194,7 @@ index 11bc6fa..0a40cdd 100644
      }
  
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/preferences/MainPreferences.java b/chrome/android/java/src/org/chromium/chrome/browser/preferences/MainPreferences.java
-index 56f952c1..6680ce8 100644
+index 56f952c1..d6c03ae 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/preferences/MainPreferences.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/preferences/MainPreferences.java
 @@ -53,6 +53,7 @@ public class MainPreferences extends PreferenceFragmentCompat
@@ -205,16 +205,16 @@ index 56f952c1..6680ce8 100644
      public static final String PREF_LANGUAGES = "languages";
      public static final String PREF_DOWNLOADS = "downloads";
      public static final String PREF_DEVELOPER = "developer";
-@@ -232,6 +233,9 @@ public class MainPreferences extends PreferenceFragmentCompat
-         ChromeBasePreferenceCompat dataReduction =
-                 (ChromeBasePreferenceCompat) findPreference(PREF_DATA_REDUCTION);
-         dataReduction.setSummary(DataReductionPreferenceFragment.generateSummary(getResources()));
-+
-+        Preference sodium = addPreferenceIfAbsent(PREF_SODIUM);
-+        setOnOffSummary(sodium, PrefServiceBridge.getInstance().isSodiumEnabled());
+@@ -198,6 +199,9 @@ public class MainPreferences extends PreferenceFragmentCompat
      }
  
-     private Preference addPreferenceIfAbsent(String key) {
+     private void updatePreferences() {
++        Preference sodium = addPreferenceIfAbsent(PREF_SODIUM);
++        setOnOffSummary(sodium, PrefServiceBridge.getInstance().isSodiumEnabled());
++
+         if (IdentityServicesProvider.getSigninManager().isSigninSupported()) {
+             addPreferenceIfAbsent(PREF_SIGN_IN);
+         } else {
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/preferences/SodiumPreference.java b/chrome/android/java/src/org/chromium/chrome/browser/preferences/SodiumPreference.java
 new file mode 100644
 index 0000000..f6aec57
