@@ -181,18 +181,6 @@ index 812a662..93a1443 100644
      @Override
      public boolean isTranslateMenuItemVisible(Tab tab) {
          String url = tab.getUrl();
-diff --git a/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabAppMenuPropertiesDelegate.java b/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabAppMenuPropertiesDelegate.java
-index 11bc6fa..0a40cdd 100644
---- a/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabAppMenuPropertiesDelegate.java
-+++ b/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabAppMenuPropertiesDelegate.java
-@@ -203,6 +203,7 @@ public class CustomTabAppMenuPropertiesDelegate extends AppMenuPropertiesDelegat
- 
-             updateRequestDesktopSiteMenuItem(menu, currentTab, requestDesktopSiteVisible);
-             prepareAddToHomescreenMenuItem(menu, currentTab, addToHomeScreenVisible);
-+            updateEnableSodiumMenuItem(menu, currentTab, false /* or same to requestDesktopSiteVisible */);
-         }
-     }
- 
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/preferences/MainPreferences.java b/chrome/android/java/src/org/chromium/chrome/browser/preferences/MainPreferences.java
 index 56f952c1..d6c03ae 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/preferences/MainPreferences.java
