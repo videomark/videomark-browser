@@ -12,10 +12,10 @@ index 4580a99..3c69051 100644
              android:title="@string/menu_history" />
          <item android:id="@+id/downloads_menu_id"
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
-index 46f734b..c49faae 100644
+index d9310b8..8f127fa 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
-@@ -2155,6 +2155,18 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
+@@ -2144,6 +2144,18 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
          } else if (id == R.id.info_menu_id) {
              PageInfoController.show(
                      this, currentTab, null, PageInfoController.OpenedFromSource.MENU);
@@ -35,10 +35,10 @@ index 46f734b..c49faae 100644
              if (NewTabPage.isNTPUrl(currentTab.getUrl())) {
                  NewTabPageUma.recordAction(NewTabPageUma.ACTION_OPENED_HISTORY_MANAGER);
 diff --git a/chrome/android/java/strings/android_chrome_strings.grd b/chrome/android/java/strings/android_chrome_strings.grd
-index 62a0dc8..ed0dda3 100644
+index 1206ac5..30b99a1 100644
 --- a/chrome/android/java/strings/android_chrome_strings.grd
 +++ b/chrome/android/java/strings/android_chrome_strings.grd
-@@ -2947,6 +2947,9 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
+@@ -2959,6 +2959,9 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
        <message name="IDS_MENU_RECENT_TABS" desc="Menu item for opening the 'Recent tabs' page that shows recently closed tabs and pages the user has opened on his/her other devices. [CHAR-LIMIT=27]">
          Recent tabs
        </message>
@@ -49,7 +49,7 @@ index 62a0dc8..ed0dda3 100644
          History
        </message>
 diff --git a/chrome/browser/browser_resources.grd b/chrome/browser/browser_resources.grd
-index c0cef30..fa1733f 100644
+index 87c529b..ad4c60e 100644
 --- a/chrome/browser/browser_resources.grd
 +++ b/chrome/browser/browser_resources.grd
 @@ -133,6 +133,19 @@
@@ -73,10 +73,10 @@ index c0cef30..fa1733f 100644
        <include name="IDR_ACCESSIBILITY_CSS" file="resources\accessibility\accessibility.css" compress="gzip" type="BINDATA" />
        <include name="IDR_ACCESSIBILITY_JS" file="resources\accessibility\accessibility.js" flattenhtml="true" compress="gzip" type="BINDATA" />
 diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
-index 3ec0ed4..0d27711 100644
+index 1826b71..b98ac80 100644
 --- a/chrome/browser/ui/BUILD.gn
 +++ b/chrome/browser/ui/BUILD.gn
-@@ -333,6 +333,8 @@ jumbo_split_static_library("ui") {
+@@ -335,6 +335,8 @@ jumbo_split_static_library("ui") {
      "webui/webui_load_timer.h",
      "webui/webui_util.cc",
      "webui/webui_util.h",
@@ -86,10 +86,10 @@ index 3ec0ed4..0d27711 100644
  
    if (is_win || is_mac) {
 diff --git a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
-index 8f6d49b..52b6e61 100644
+index afb6489..e8d2674 100644
 --- a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
 +++ b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
-@@ -64,6 +64,7 @@
+@@ -65,6 +65,7 @@
  #include "chrome/browser/ui/webui/usb_internals/usb_internals_ui.h"
  #include "chrome/browser/ui/webui/user_actions/user_actions_ui.h"
  #include "chrome/browser/ui/webui/version_ui.h"
@@ -97,16 +97,16 @@ index 8f6d49b..52b6e61 100644
  #include "chrome/common/buildflags.h"
  #include "chrome/common/chrome_features.h"
  #include "chrome/common/pref_names.h"
-@@ -420,6 +421,8 @@ WebUIFactoryFunction GetWebUIFactoryFunction(WebUI* web_ui,
+@@ -447,6 +448,8 @@ WebUIFactoryFunction GetWebUIFactoryFunction(WebUI* web_ui,
      return &NewWebUI<UserActionsUI>;
    if (url.host_piece() == chrome::kChromeUIVersionHost)
      return &NewWebUI<VersionUI>;
 +  if (url.host_piece() == chrome::kChromeUISodiumResultHost)
 +    return &NewWebUI<SodiumResult>;
  
-   /****************************************************************************
-    * OS Specific #defines
-@@ -838,6 +841,7 @@ bool ChromeWebUIControllerFactory::IsWebUIAllowedToMakeNetworkRequests(
+ #if !defined(OS_ANDROID)
+   if (AppManagementUI::IsEnabled() &&
+@@ -865,6 +868,7 @@ bool ChromeWebUIControllerFactory::IsWebUIAllowedToMakeNetworkRequests(
    // If you are adding a new host to this list, please file a corresponding bug
    // to track its removal. See https://crbug.com/829412 for the metabug.
    return
@@ -186,7 +186,7 @@ index 0000000..47ddfc0
 +
 +#endif  // CHROME_BROWSER_UI_WEBUI_SODIUM_RESULT_H_
 diff --git a/chrome/common/webui_url_constants.cc b/chrome/common/webui_url_constants.cc
-index 4ea75d7..f684140 100644
+index 8594a6a..1bc6046 100644
 --- a/chrome/common/webui_url_constants.cc
 +++ b/chrome/common/webui_url_constants.cc
 @@ -17,6 +17,8 @@ namespace chrome {
@@ -199,7 +199,7 @@ index 4ea75d7..f684140 100644
  const char kChromeUIAboutURL[] = "chrome://about/";
  const char kChromeUIAccessibilityHost[] = "accessibility";
 diff --git a/chrome/common/webui_url_constants.h b/chrome/common/webui_url_constants.h
-index f6935a3..a035acc 100644
+index f550bc6..f7184d4 100644
 --- a/chrome/common/webui_url_constants.h
 +++ b/chrome/common/webui_url_constants.h
 @@ -25,6 +25,8 @@ namespace chrome {

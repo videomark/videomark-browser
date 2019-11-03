@@ -1,7 +1,7 @@
 # VideoMark Browser (Custom Android Chromium patches)
 本リポジトリには Android 版 Chromium を Web VideoMark プロジェクト用にカスタマイズした VideoMark Browser をビルドする為の Chromium に対するパッチファイルを収めています。
 
-* 対応する Chromium バージョンは現在 77.0.3865.56 です。
+* 対応する Chromium バージョンは現在 78.0.3904.93 です。
 * chromium のソースコードリポジトリ
   * https://chromium.googlesource.com/chromium/src/  
 * リポジトリをダウンロード (fetch --nohooks android) したら、対応する Chromium バージョンのタグをチェックアウトしてパッチを適用し、ビルドしてください。
@@ -63,6 +63,9 @@ PC 版サイト表示だと```window.navigator.userAgent```は PC のものに�
 
 ### timing_allow_origin.diff
 動画再生時の視聴情報収集が on かつ許可ドメインのウェブページ上で [Resource Timing API](https://developer.mozilla.org/en-US/docs/Web/API/Resource_Timing_API) によるパフォーマンスデータの取得を強制的に許可します。
+
+### netinfo_apn_plmn.diff
+[NetworkInformation API](https://developer.mozilla.org/ja/docs/Web/API/NetworkInformation) を拡張し、動画再生時の視聴情報収集が on かつ許可ドメインのウェブページ上で APN と PLMN が取得可能なプロパティを追加します。
 
 ### inject_sodium.diff
 動画再生時の視聴情報収集が on かつ許可ドメインのウェブページ上で sodium.js を実行するための script タグを body の末尾に挿入します。

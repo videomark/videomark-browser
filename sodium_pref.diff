@@ -58,10 +58,10 @@ index d3311a7..8da568b 100644
       * Dispatches the intent through a proxy activity, so that startActivityForResult can be used
       * and the intent recipient can verify the caller.
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/preferences/PrefServiceBridge.java b/chrome/android/java/src/org/chromium/chrome/browser/preferences/PrefServiceBridge.java
-index 54d113e..08b2ec8 100644
+index 84728d6..6345439 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/preferences/PrefServiceBridge.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/preferences/PrefServiceBridge.java
-@@ -311,6 +311,13 @@ public class PrefServiceBridge {
+@@ -322,6 +322,13 @@ public class PrefServiceBridge {
          return nativeGetDoNotTrackEnabled();
      }
  
@@ -75,7 +75,7 @@ index 54d113e..08b2ec8 100644
      public boolean getPasswordEchoEnabled() {
          return nativeGetPasswordEchoEnabled();
      }
-@@ -624,6 +631,10 @@ public class PrefServiceBridge {
+@@ -635,6 +642,10 @@ public class PrefServiceBridge {
          nativeSetDoNotTrackEnabled(enabled);
      }
  
@@ -86,7 +86,7 @@ index 54d113e..08b2ec8 100644
      public void setRememberPasswordsEnabled(boolean allow) {
          nativeSetRememberPasswordsEnabled(allow);
      }
-@@ -1079,6 +1090,7 @@ public class PrefServiceBridge {
+@@ -1105,6 +1116,7 @@ public class PrefServiceBridge {
      private native boolean nativeGetLocationAllowedByPolicy();
      private native boolean nativeGetAllowLocationManagedByCustodian();
      private native boolean nativeGetDoNotTrackEnabled();
@@ -94,16 +94,16 @@ index 54d113e..08b2ec8 100644
      private native boolean nativeGetPasswordEchoEnabled();
      private native boolean nativeGetFirstRunEulaAccepted();
      private native boolean nativeGetCameraEnabled();
-@@ -1118,6 +1130,7 @@ public class PrefServiceBridge {
+@@ -1144,6 +1156,7 @@ public class PrefServiceBridge {
      private native void nativeSetBlockThirdPartyCookiesEnabled(boolean enabled);
      private native void nativeSetClipboardEnabled(boolean enabled);
      private native void nativeSetDoNotTrackEnabled(boolean enabled);
 +    private native void nativeSetSodiumEnabled(boolean enabled);
      private native void nativeSetRememberPasswordsEnabled(boolean allow);
      private native void nativeSetPasswordManagerAutoSigninEnabled(boolean enabled);
-     private native boolean nativeGetAllowLocationEnabled();
+     private native void nativeSetPasswordLeakDetectionEnabled(boolean enabled);
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tab/Tab.java b/chrome/android/java/src/org/chromium/chrome/browser/tab/Tab.java
-index 90022b3..5025158 100644
+index e01bdc9..e55ffa5 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/tab/Tab.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/tab/Tab.java
 @@ -46,6 +46,7 @@ import org.chromium.chrome.browser.native_page.NativePageAssassin;
@@ -140,10 +140,10 @@ index 90022b3..5025158 100644
       */
      // TODO(tedchoc): Remove this and transition all clients to use LocationBarModel directly.
 diff --git a/chrome/browser/android/preferences/pref_service_bridge.cc b/chrome/browser/android/preferences/pref_service_bridge.cc
-index 3dba2cc..6e781a2 100644
+index e50c1af..cd5b346 100644
 --- a/chrome/browser/android/preferences/pref_service_bridge.cc
 +++ b/chrome/browser/android/preferences/pref_service_bridge.cc
-@@ -354,6 +354,12 @@ static jboolean JNI_PrefServiceBridge_GetDoNotTrackEnabled(
+@@ -368,6 +368,12 @@ static jboolean JNI_PrefServiceBridge_GetDoNotTrackEnabled(
    return GetPrefService()->GetBoolean(prefs::kEnableDoNotTrack);
  }
  
@@ -156,7 +156,7 @@ index 3dba2cc..6e781a2 100644
  static jboolean JNI_PrefServiceBridge_GetNetworkPredictionEnabled(
      JNIEnv* env,
      const JavaParamRef<jobject>& obj) {
-@@ -852,6 +858,13 @@ static void JNI_PrefServiceBridge_SetDoNotTrackEnabled(
+@@ -874,6 +880,13 @@ static void JNI_PrefServiceBridge_SetDoNotTrackEnabled(
    GetPrefService()->SetBoolean(prefs::kEnableDoNotTrack, allow);
  }
  
@@ -183,7 +183,7 @@ index 9008f3e..b95707f 100644
    // Handling the backward compatibility of previous boolean verions of policy
    // controls.
 diff --git a/chrome/browser/ui/browser_ui_prefs.cc b/chrome/browser/ui/browser_ui_prefs.cc
-index 7da71a9..1897d41 100644
+index a60ac23..9492929 100644
 --- a/chrome/browser/ui/browser_ui_prefs.cc
 +++ b/chrome/browser/ui/browser_ui_prefs.cc
 @@ -77,6 +77,7 @@ void RegisterBrowserUserPrefs(user_prefs::PrefRegistrySyncable* registry) {
@@ -195,7 +195,7 @@ index 7da71a9..1897d41 100644
    registry->RegisterBooleanPref(prefs::kPrintPreviewUseSystemDefaultPrinter,
                                  false);
 diff --git a/chrome/browser/ui/prefs/pref_watcher.cc b/chrome/browser/ui/prefs/pref_watcher.cc
-index 44cffec..3b3ae31 100644
+index a738dc8..683a353 100644
 --- a/chrome/browser/ui/prefs/pref_watcher.cc
 +++ b/chrome/browser/ui/prefs/pref_watcher.cc
 @@ -73,6 +73,8 @@ PrefWatcher::PrefWatcher(Profile* profile) : profile_(profile) {
@@ -208,10 +208,10 @@ index 44cffec..3b3ae31 100644
                                       renderer_callback);
    profile_pref_change_registrar_.Add(prefs::kWebRTCNonProxiedUdpEnabled,
 diff --git a/chrome/common/pref_names.cc b/chrome/common/pref_names.cc
-index 1be0abd..1c84b50 100644
+index 962ef67..307609a 100644
 --- a/chrome/common/pref_names.cc
 +++ b/chrome/common/pref_names.cc
-@@ -1178,6 +1178,8 @@ const char kEnableDoNotTrack[] = "enable_do_not_track";
+@@ -1199,6 +1199,8 @@ const char kEnableDoNotTrack[] = "enable_do_not_track";
  // non-webkit-prefixed string.
  const char kEnableEncryptedMedia[] = "webkit.webprefs.encrypted_media_enabled";
  
@@ -221,10 +221,10 @@ index 1be0abd..1c84b50 100644
  // default browser on first run.
  const char kImportAutofillFormData[] = "import_autofill_form_data";
 diff --git a/chrome/common/pref_names.h b/chrome/common/pref_names.h
-index c1ac851..3ed3854 100644
+index f9429eb..c84fa13 100644
 --- a/chrome/common/pref_names.h
 +++ b/chrome/common/pref_names.h
-@@ -371,6 +371,7 @@ extern const char kEnableHyperlinkAuditing[];
+@@ -376,6 +376,7 @@ extern const char kEnableHyperlinkAuditing[];
  extern const char kEnableReferrers[];
  extern const char kEnableDoNotTrack[];
  extern const char kEnableEncryptedMedia[];
@@ -288,7 +288,7 @@ index 7f01993..e8359e1 100644
        JNIEnv* env,
        const base::android::JavaParamRef<jobject>& obj,
 diff --git a/content/browser/frame_host/navigation_controller_impl.cc b/content/browser/frame_host/navigation_controller_impl.cc
-index 6a3cca0..74aff12 100644
+index dacaa68..ad46289 100644
 --- a/content/browser/frame_host/navigation_controller_impl.cc
 +++ b/content/browser/frame_host/navigation_controller_impl.cc
 @@ -73,6 +73,7 @@
@@ -299,7 +299,7 @@ index 6a3cca0..74aff12 100644
  #include "content/public/common/content_client.h"
  #include "content/public/common/content_constants.h"
  #include "content/public/common/content_features.h"
-@@ -3439,4 +3440,19 @@ void NavigationControllerImpl::SetSkippableForSameDocumentEntries(
+@@ -3481,4 +3482,19 @@ void NavigationControllerImpl::SetSkippableForSameDocumentEntries(
    }
  }
  
@@ -320,10 +320,10 @@ index 6a3cca0..74aff12 100644
 +
  }  // namespace content
 diff --git a/content/browser/frame_host/navigation_controller_impl.h b/content/browser/frame_host/navigation_controller_impl.h
-index 4af7438..f97982d 100644
+index d85c4ee..1c36d85 100644
 --- a/content/browser/frame_host/navigation_controller_impl.h
 +++ b/content/browser/frame_host/navigation_controller_impl.h
-@@ -264,6 +264,10 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
+@@ -267,6 +267,10 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
    // entries can be updated as needed.
    void NotifyUserActivation();
  
@@ -335,39 +335,39 @@ index 4af7438..f97982d 100644
    friend class RestoreHelper;
  
 diff --git a/content/public/android/java/src/org/chromium/content/browser/framehost/NavigationControllerImpl.java b/content/public/android/java/src/org/chromium/content/browser/framehost/NavigationControllerImpl.java
-index 9d45f56..ce78e09 100644
+index 53a1a08..39d8935 100644
 --- a/content/public/android/java/src/org/chromium/content/browser/framehost/NavigationControllerImpl.java
 +++ b/content/public/android/java/src/org/chromium/content/browser/framehost/NavigationControllerImpl.java
-@@ -201,6 +201,19 @@ import org.chromium.content_public.common.ResourceRequestBody;
+@@ -224,6 +224,19 @@ import org.chromium.content_public.common.ResourceRequestBody;
      }
  
      @Override
 +    public boolean getEnableSodium() {
 +        if (mNativeNavigationControllerAndroid == 0) return false;
-+        return nativeGetEnableSodium(mNativeNavigationControllerAndroid);
++        return NavigationControllerImplJni.get().getEnableSodium(mNativeNavigationControllerAndroid, NavigationControllerImpl.this);
 +    }
 +
 +    @Override
 +    public void setEnableSodium(boolean enabled, boolean reloadOnChange) {
 +        if (mNativeNavigationControllerAndroid != 0) {
-+            nativeSetEnableSodium(mNativeNavigationControllerAndroid, enabled, reloadOnChange);
++            NavigationControllerImplJni.get().setEnableSodium(mNativeNavigationControllerAndroid, NavigationControllerImpl.this, enabled, reloadOnChange);
 +        }
 +    }
 +
 +    @Override
      public NavigationEntry getEntryAtIndex(int index) {
          if (mNativeNavigationControllerAndroid != 0) {
-             return nativeGetEntryAtIndex(mNativeNavigationControllerAndroid, index);
-@@ -308,6 +321,9 @@ import org.chromium.content_public.common.ResourceRequestBody;
-     private native boolean nativeGetUseDesktopUserAgent(long nativeNavigationControllerAndroid);
-     private native void nativeSetUseDesktopUserAgent(long nativeNavigationControllerAndroid,
-             boolean override, boolean reloadOnChange);
-+    private native boolean nativeGetEnableSodium(long nativeNavigationControllerAndroid);
-+    private native void nativeSetEnableSodium(long nativeNavigationControllerAndroid,
-+            boolean enabled, boolean reloadOnChange);
-     private native NavigationEntry nativeGetEntryAtIndex(
-             long nativeNavigationControllerAndroid, int index);
-     private native NavigationEntry nativeGetVisibleEntry(long nativeNavigationControllerAndroid);
+             return NavigationControllerImplJni.get().getEntryAtIndex(
+@@ -352,6 +365,9 @@ import org.chromium.content_public.common.ResourceRequestBody;
+                 long nativeNavigationControllerAndroid, NavigationControllerImpl caller);
+         void setUseDesktopUserAgent(long nativeNavigationControllerAndroid,
+                 NavigationControllerImpl caller, boolean override, boolean reloadOnChange);
++        boolean getEnableSodium(long nativeNavigationControllerAndroid, NavigationControllerImpl caller);
++        void setEnableSodium(long nativeNavigationControllerAndroid, NavigationControllerImpl caller,
++                boolean enabled, boolean reloadOnChange);
+         NavigationEntry getEntryAtIndex(
+                 long nativeNavigationControllerAndroid, NavigationControllerImpl caller, int index);
+         NavigationEntry getVisibleEntry(
 diff --git a/content/public/android/java/src/org/chromium/content_public/browser/NavigationController.java b/content/public/android/java/src/org/chromium/content_public/browser/NavigationController.java
 index a5b3723..e3e6e63 100644
 --- a/content/public/android/java/src/org/chromium/content_public/browser/NavigationController.java
@@ -391,7 +391,7 @@ index a5b3723..e3e6e63 100644
       * @param index Index to retrieve the NavigationEntry for.
       * @return Entry containing info about the navigation, null if the index is out of bounds.
 diff --git a/content/public/common/common_param_traits_macros.h b/content/public/common/common_param_traits_macros.h
-index c0c22fa..1403cb5 100644
+index 30e6e9d..5b7ed13 100644
 --- a/content/public/common/common_param_traits_macros.h
 +++ b/content/public/common/common_param_traits_macros.h
 @@ -329,6 +329,7 @@ IPC_STRUCT_TRAITS_BEGIN(blink::mojom::RendererPreferences)
@@ -403,12 +403,12 @@ index c0c22fa..1403cb5 100644
    IPC_STRUCT_TRAITS_MEMBER(webrtc_udp_min_port)
    IPC_STRUCT_TRAITS_MEMBER(webrtc_udp_max_port)
 diff --git a/content/public/renderer/render_frame.h b/content/public/renderer/render_frame.h
-index 36b2f87..d3dd328 100644
+index 188d1ef..870acad 100644
 --- a/content/public/renderer/render_frame.h
 +++ b/content/public/renderer/render_frame.h
-@@ -312,6 +312,10 @@ class CONTENT_EXPORT RenderFrame : public IPC::Listener,
-   // a local root.
-   virtual void UpdateAllLifecyclePhasesAndCompositeForTesting() = 0;
+@@ -321,6 +321,10 @@ class CONTENT_EXPORT RenderFrame : public IPC::Listener,
+   // Sets that cross browsing instance frame lookup is allowed.
+   virtual void SetAllowsCrossBrowsingInstanceFrameLookup() = 0;
  
 +  virtual bool IsEnableSodium() = 0;
 +
@@ -418,7 +418,7 @@ index 36b2f87..d3dd328 100644
    ~RenderFrame() override {}
  
 diff --git a/content/renderer/render_frame_impl.cc b/content/renderer/render_frame_impl.cc
-index 01b1d99..c7629c3 100644
+index f8f8209..7cbbb67 100644
 --- a/content/renderer/render_frame_impl.cc
 +++ b/content/renderer/render_frame_impl.cc
 @@ -47,6 +47,7 @@
@@ -430,14 +430,14 @@ index 01b1d99..c7629c3 100644
  #include "content/common/associated_interfaces.mojom.h"
  #include "content/common/content_constants_internal.h"
 @@ -82,6 +83,7 @@
+ #include "content/public/common/service_manager_connection.h"
  #include "content/public/common/url_constants.h"
- #include "content/public/common/url_loader_throttle.h"
  #include "content/public/common/url_utils.h"
 +#include "content/public/common/user_agent.h"
  #include "content/public/renderer/browser_plugin_delegate.h"
  #include "content/public/renderer/content_renderer_client.h"
  #include "content/public/renderer/context_menu_client.h"
-@@ -7730,4 +7732,16 @@ void RenderFrameImpl::SetWebURLLoaderFactoryOverrideForTest(
+@@ -7816,4 +7818,16 @@ void RenderFrameImpl::SetWebURLLoaderFactoryOverrideForTest(
    web_url_loader_factory_override_for_test_ = std::move(factory);
  }
  
@@ -455,12 +455,12 @@ index 01b1d99..c7629c3 100644
 +
  }  // namespace content
 diff --git a/content/renderer/render_frame_impl.h b/content/renderer/render_frame_impl.h
-index 92ab2b7..104ca0a 100644
+index 0dc583d..049c17b 100644
 --- a/content/renderer/render_frame_impl.h
 +++ b/content/renderer/render_frame_impl.h
-@@ -1003,6 +1003,10 @@ class CONTENT_EXPORT RenderFrameImpl
+@@ -1001,6 +1001,10 @@ class CONTENT_EXPORT RenderFrameImpl
    void SetWebURLLoaderFactoryOverrideForTest(
-       std::unique_ptr<blink::WebURLLoaderFactory> factory);
+       std::unique_ptr<blink::WebURLLoaderFactoryForTest> factory);
  
 +  bool IsEnableSodium() override;
 +
@@ -470,7 +470,7 @@ index 92ab2b7..104ca0a 100644
    explicit RenderFrameImpl(CreateParams params);
  
 diff --git a/third_party/blink/public/mojom/renderer_preferences.mojom b/third_party/blink/public/mojom/renderer_preferences.mojom
-index 97f5463..eb50350 100644
+index 26c3aa1..99ae7ae 100644
 --- a/third_party/blink/public/mojom/renderer_preferences.mojom
 +++ b/third_party/blink/public/mojom/renderer_preferences.mojom
 @@ -79,6 +79,9 @@ struct RendererPreferences {
@@ -484,10 +484,10 @@ index 97f5463..eb50350 100644
    // of the strings defined in privacy.json. The allowed values are specified
    // in webrtc_ip_handling_policy.h.
 diff --git a/third_party/blink/public/web/web_local_frame_client.h b/third_party/blink/public/web/web_local_frame_client.h
-index 30fb02c..2c3b8ca 100644
+index 8f62613..bc5eefc 100644
 --- a/third_party/blink/public/web/web_local_frame_client.h
 +++ b/third_party/blink/public/web/web_local_frame_client.h
-@@ -743,6 +743,10 @@ class BLINK_EXPORT WebLocalFrameClient {
+@@ -757,6 +757,10 @@ class BLINK_EXPORT WebLocalFrameClient {
    // header. An empty string indicates that no DNT header will be send.
    virtual WebString DoNotTrackValue() { return WebString(); }
  
@@ -499,10 +499,10 @@ index 30fb02c..2c3b8ca 100644
  
    // Asks the embedder whether WebGL is blocked for the WebFrame. This call is
 diff --git a/third_party/blink/renderer/core/exported/local_frame_client_impl.cc b/third_party/blink/renderer/core/exported/local_frame_client_impl.cc
-index 95cd13b..d78c8b7 100644
+index 3a0e018..a33805c 100644
 --- a/third_party/blink/renderer/core/exported/local_frame_client_impl.cc
 +++ b/third_party/blink/renderer/core/exported/local_frame_client_impl.cc
-@@ -839,6 +839,14 @@ String LocalFrameClientImpl::DoNotTrackValue() {
+@@ -849,6 +849,14 @@ String LocalFrameClientImpl::DoNotTrackValue() {
    return String();
  }
  
@@ -518,10 +518,10 @@ index 95cd13b..d78c8b7 100644
  // will occur.
  void LocalFrameClientImpl::TransitionToCommittedForNewPage() {
 diff --git a/third_party/blink/renderer/core/exported/local_frame_client_impl.h b/third_party/blink/renderer/core/exported/local_frame_client_impl.h
-index 991a32b..716f6be 100644
+index 1a06ac7..73db7e1 100644
 --- a/third_party/blink/renderer/core/exported/local_frame_client_impl.h
 +++ b/third_party/blink/renderer/core/exported/local_frame_client_impl.h
-@@ -176,6 +176,8 @@ class LocalFrameClientImpl final : public LocalFrameClient {
+@@ -185,6 +185,8 @@ class LocalFrameClientImpl final : public LocalFrameClient {
    WTF::String UserAgent() override;
    blink::UserAgentMetadata UserAgentMetadata() override;
    WTF::String DoNotTrackValue() override;
@@ -531,10 +531,10 @@ index 991a32b..716f6be 100644
    LocalFrame* CreateFrame(const WTF::AtomicString& name,
                            HTMLFrameOwnerElement*) override;
 diff --git a/third_party/blink/renderer/core/frame/local_frame_client.h b/third_party/blink/renderer/core/frame/local_frame_client.h
-index f3845a6..66f6d25 100644
+index 9134ca8..170c097 100644
 --- a/third_party/blink/renderer/core/frame/local_frame_client.h
 +++ b/third_party/blink/renderer/core/frame/local_frame_client.h
-@@ -280,6 +280,10 @@ class CORE_EXPORT LocalFrameClient : public FrameClient {
+@@ -284,6 +284,10 @@ class CORE_EXPORT LocalFrameClient : public FrameClient {
  
    virtual String DoNotTrackValue() = 0;
  
@@ -546,10 +546,10 @@ index f3845a6..66f6d25 100644
  
    virtual LocalFrame* CreateFrame(const AtomicString& name,
 diff --git a/third_party/blink/renderer/core/loader/empty_clients.h b/third_party/blink/renderer/core/loader/empty_clients.h
-index 469d071..3366444 100644
+index bebb248..957a143 100644
 --- a/third_party/blink/renderer/core/loader/empty_clients.h
 +++ b/third_party/blink/renderer/core/loader/empty_clients.h
-@@ -326,6 +326,10 @@ class CORE_EXPORT EmptyLocalFrameClient : public LocalFrameClient {
+@@ -338,6 +338,10 @@ class CORE_EXPORT EmptyLocalFrameClient : public LocalFrameClient {
  
    String DoNotTrackValue() override { return String(); }
  
@@ -559,4 +559,4 @@ index 469d071..3366444 100644
 +
    void TransitionToCommittedForNewPage() override {}
  
-   bool NavigateBackForward(int offset) const override { return false; }
+   bool NavigateBackForward(int offset, bool from_script) const override {

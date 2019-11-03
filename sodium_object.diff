@@ -1,8 +1,8 @@
 diff --git a/content/browser/BUILD.gn b/content/browser/BUILD.gn
-index aff5de7..65897e2 100644
+index f10e1a8..0582869 100644
 --- a/content/browser/BUILD.gn
 +++ b/content/browser/BUILD.gn
-@@ -1826,6 +1826,10 @@ jumbo_source_set("browser") {
+@@ -1755,6 +1755,10 @@ jumbo_source_set("browser") {
      "sms/sms_provider.h",
      "sms/sms_service.cc",
      "sms/sms_service.h",
@@ -14,27 +14,27 @@ index aff5de7..65897e2 100644
      "speech/speech_recognition_dispatcher_host.h",
      "speech/speech_recognition_manager_impl.cc",
 diff --git a/content/browser/frame_host/render_frame_host_impl.cc b/content/browser/frame_host/render_frame_host_impl.cc
-index d22ddde..b23bb071 100644
+index f25b4fa..2edf6fe 100644
 --- a/content/browser/frame_host/render_frame_host_impl.cc
 +++ b/content/browser/frame_host/render_frame_host_impl.cc
-@@ -104,6 +104,7 @@
- #include "content/browser/renderer_interface_binders.h"
+@@ -103,6 +103,7 @@
  #include "content/browser/scoped_active_url.h"
+ #include "content/browser/service_worker/service_worker_context_wrapper.h"
  #include "content/browser/sms/sms_service.h"
 +#include "content/browser/sodium/sodium_storage_area_host_impl.h"
  #include "content/browser/speech/speech_recognition_dispatcher_host.h"
+ #include "content/browser/speech/speech_synthesis_impl.h"
  #include "content/browser/storage_partition_impl.h"
- #include "content/browser/wake_lock/wake_lock_service_impl.h"
-@@ -4169,6 +4170,9 @@ void RenderFrameHostImpl::RegisterMojoInterfaces() {
-                  base::Unretained(permission_service_context_.get())));
+@@ -4297,6 +4298,9 @@ void RenderFrameHostImpl::RegisterMojoInterfaces() {
+       base::BindRepeating(&PermissionServiceContext::CreateService,
+                           base::Unretained(permission_service_context_.get())));
  
-   registry_->AddInterface(
++  registry_->AddInterface(
 +      base::Bind(&SodiumStorageAreaHostImpl::Create, process_->GetID()));
 +
-+  registry_->AddInterface(
-       base::Bind(&RenderFrameHostImpl::BindPresentationServiceRequest,
-                  base::Unretained(this)));
- 
+   registry_->AddInterface(base::BindRepeating(
+       [](RenderFrameHostImpl* frame,
+          mojo::PendingReceiver<blink::mojom::PresentationService> receiver) {
 diff --git a/content/browser/sodium/sodium_storage_area_host_impl.cc b/content/browser/sodium/sodium_storage_area_host_impl.cc
 new file mode 100644
 index 0000000..dc24a4e
@@ -303,10 +303,10 @@ index 0000000..409f852
 +
 +#endif  // CONTENT_BROWSER_SODIUM_SODIUM_STORAGE_VALUE_STORE_H_
 diff --git a/content/public/app/content_browser_manifest.cc b/content/public/app/content_browser_manifest.cc
-index b08b7e9..43f2df9 100644
+index 9002c33..eadcde9 100644
 --- a/content/public/app/content_browser_manifest.cc
 +++ b/content/public/app/content_browser_manifest.cc
-@@ -242,6 +242,7 @@ const service_manager::Manifest& GetContentBrowserManifest() {
+@@ -250,6 +250,7 @@ const service_manager::Manifest& GetContentBrowserManifest() {
                    "blink.mojom.SharedWorkerConnector",
                    "blink.mojom.SmsReceiver",
                    "blink.mojom.SpeechRecognizer",
@@ -315,10 +315,10 @@ index b08b7e9..43f2df9 100644
                    "blink.mojom.UnhandledTapNotifier",
                    "blink.mojom.WakeLockService",
 diff --git a/third_party/blink/public/mojom/BUILD.gn b/third_party/blink/public/mojom/BUILD.gn
-index c4cb62f..5dae67c 100644
+index a5a94a8..89d76eb 100644
 --- a/third_party/blink/public/mojom/BUILD.gn
 +++ b/third_party/blink/public/mojom/BUILD.gn
-@@ -117,6 +117,7 @@ mojom("mojom_platform") {
+@@ -119,6 +119,7 @@ mojom("mojom_platform") {
      "service_worker/service_worker_stream_handle.mojom",
      "site_engagement/site_engagement.mojom",
      "sms/sms_receiver.mojom",
@@ -349,10 +349,10 @@ index 0000000..8e1c032
 +  clear(string area) => ();
 +};
 diff --git a/third_party/blink/renderer/modules/BUILD.gn b/third_party/blink/renderer/modules/BUILD.gn
-index ca586dc..691cb4d 100644
+index 30dcfb2..d9b2b9a 100644
 --- a/third_party/blink/renderer/modules/BUILD.gn
 +++ b/third_party/blink/renderer/modules/BUILD.gn
-@@ -152,6 +152,7 @@ target("jumbo_" + modules_target_type, "modules") {
+@@ -154,6 +154,7 @@ target("jumbo_" + modules_target_type, "modules") {
      "//third_party/blink/renderer/modules/service_worker",
      "//third_party/blink/renderer/modules/shapedetection",
      "//third_party/blink/renderer/modules/sms",
@@ -361,10 +361,10 @@ index ca586dc..691cb4d 100644
      "//third_party/blink/renderer/modules/srcobject",
      "//third_party/blink/renderer/modules/storage",
 diff --git a/third_party/blink/renderer/modules/modules_idl_files.gni b/third_party/blink/renderer/modules/modules_idl_files.gni
-index cf616ab..54a6928 100644
+index 6209ed07..713e5e9 100644
 --- a/third_party/blink/renderer/modules/modules_idl_files.gni
 +++ b/third_party/blink/renderer/modules/modules_idl_files.gni
-@@ -326,6 +326,11 @@ modules_idl_files =
+@@ -329,6 +329,11 @@ modules_idl_files =
            "shapedetection/detected_text.idl",
            "shapedetection/face_detector.idl",
            "shapedetection/text_detector.idl",
@@ -376,7 +376,7 @@ index cf616ab..54a6928 100644
            "speech/speech_grammar.idl",
            "speech/speech_grammar_list.idl",
            "speech/speech_recognition.idl",
-@@ -972,6 +977,7 @@ modules_dependency_idl_files =
+@@ -999,6 +1004,7 @@ modules_dependency_idl_files =
            "screen_orientation/screen_screen_orientation.idl",
            "service_worker/navigator_service_worker.idl",
            "sms/navigator_sms.idl",
@@ -563,14 +563,14 @@ index 0000000..53ba1cb9
 +};
 diff --git a/third_party/blink/renderer/modules/sodium/sodium_storage_area.cc b/third_party/blink/renderer/modules/sodium/sodium_storage_area.cc
 new file mode 100644
-index 0000000..d8fcc63
+index 0000000..ce1c91f
 --- /dev/null
 +++ b/third_party/blink/renderer/modules/sodium/sodium_storage_area.cc
 @@ -0,0 +1,362 @@
 +#include "third_party/blink/renderer/modules/sodium/sodium_storage_area.h"
 +
 +#include "third_party/blink/renderer/platform/bindings/exception_state.h"
-+#include "third_party/blink/renderer/platform/shared_buffer.h"
++#include "third_party/blink/renderer/platform/wtf/shared_buffer.h"
 +#include "third_party/blink/renderer/bindings/core/v8/serialization/serialized_script_value.h"
 +#include "third_party/blink/renderer/core/frame/local_frame.h"
 +#include "services/service_manager/public/cpp/interface_provider.h"

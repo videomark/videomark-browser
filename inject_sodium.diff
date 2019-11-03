@@ -1,5 +1,5 @@
 diff --git a/chrome/browser/browser_resources.grd b/chrome/browser/browser_resources.grd
-index c0cef30..300a89c 100644
+index 87c529b..6ac14788 100644
 --- a/chrome/browser/browser_resources.grd
 +++ b/chrome/browser/browser_resources.grd
 @@ -87,6 +87,7 @@
@@ -11,10 +11,10 @@ index c0cef30..300a89c 100644
          <include name="IDR_DISCARDS_MOJO_API_HTML" file="resources\discards\mojo_api.html" compress="gzip" allowexternalscript="true" type="BINDATA" />
          <include name="IDR_DISCARDS_DATABASE_TAB_HTML" file="resources\discards\database_tab.html" compress="gzip" allowexternalscript="true" type="BINDATA" />
 diff --git a/chrome/renderer/chrome_content_renderer_client.cc b/chrome/renderer/chrome_content_renderer_client.cc
-index ae7e073..ae5a7b5 100644
+index 6ad2480..870eba5 100644
 --- a/chrome/renderer/chrome_content_renderer_client.cc
 +++ b/chrome/renderer/chrome_content_renderer_client.cc
-@@ -41,6 +41,7 @@
+@@ -40,6 +40,7 @@
  #include "chrome/common/thread_profiler.h"
  #include "chrome/common/url_constants.h"
  #include "chrome/common/webui_url_constants.h"
@@ -22,14 +22,15 @@ index ae7e073..ae5a7b5 100644
  #include "chrome/grit/chromium_strings.h"
  #include "chrome/grit/generated_resources.h"
  #include "chrome/grit/renderer_resources.h"
-@@ -136,12 +137,14 @@
+@@ -138,6 +139,7 @@
  #include "third_party/blink/public/web/web_origin_trials.h"
  #include "third_party/blink/public/web/web_plugin_container.h"
  #include "third_party/blink/public/web/web_plugin_params.h"
 +#include "third_party/blink/public/web/web_script_source.h"
  #include "third_party/blink/public/web/web_security_policy.h"
+ #include "third_party/blink/public/web/web_view.h"
  #include "ui/base/l10n/l10n_util.h"
- #include "ui/base/layout.h"
+@@ -145,6 +147,7 @@
  #include "ui/base/resource/resource_bundle.h"
  #include "ui/base/webui/jstemplate_builder.h"
  #include "url/origin.h"
@@ -37,7 +38,7 @@ index ae7e073..ae5a7b5 100644
  
  #if defined(OS_ANDROID)
  #include "chrome/renderer/sandbox_status_extension_android.h"
-@@ -1472,6 +1475,21 @@ void ChromeContentRendererClient::RecordRapporURL(const std::string& metric,
+@@ -1458,6 +1461,21 @@ void ChromeContentRendererClient::RecordRapporURL(const std::string& metric,
    rappor_recorder_->RecordRapporURL(metric, url);
  }
  
@@ -59,7 +60,7 @@ index ae7e073..ae5a7b5 100644
  void ChromeContentRendererClient::RunScriptsAtDocumentStart(
      content::RenderFrame* render_frame) {
  #if BUILDFLAG(ENABLE_EXTENSIONS)
-@@ -1488,6 +1506,8 @@ void ChromeContentRendererClient::RunScriptsAtDocumentEnd(
+@@ -1474,6 +1492,8 @@ void ChromeContentRendererClient::RunScriptsAtDocumentEnd(
        render_frame);
    // |render_frame| might be dead by now.
  #endif

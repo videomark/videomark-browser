@@ -15,7 +15,7 @@ index bf59138..e77a215 100644
          // pairing code URL, since these match the current tab with a device (Chromecast
          // or similar) it is supposed to be controlling. Using a different application
 diff --git a/content/browser/frame_host/navigation_controller_impl.cc b/content/browser/frame_host/navigation_controller_impl.cc
-index 6a3cca0..0e3de40 100644
+index dacaa68..622a722 100644
 --- a/content/browser/frame_host/navigation_controller_impl.cc
 +++ b/content/browser/frame_host/navigation_controller_impl.cc
 @@ -86,6 +86,7 @@
@@ -26,7 +26,7 @@ index 6a3cca0..0e3de40 100644
  
  namespace content {
  namespace {
-@@ -963,6 +964,11 @@ bool NavigationControllerImpl::PendingEntryMatchesHandle(
+@@ -965,6 +966,11 @@ bool NavigationControllerImpl::PendingEntryMatchesHandle(
           pending_entry_->GetUniqueID() == handle->pending_nav_entry_id();
  }
  
@@ -38,7 +38,7 @@ index 6a3cca0..0e3de40 100644
  bool NavigationControllerImpl::RendererDidNavigate(
      RenderFrameHostImpl* rfh,
      const FrameHostMsg_DidCommitProvisionalLoad_Params& params,
-@@ -972,19 +978,21 @@ bool NavigationControllerImpl::RendererDidNavigate(
+@@ -974,19 +980,21 @@ bool NavigationControllerImpl::RendererDidNavigate(
      NavigationRequest* navigation_request) {
    DCHECK(navigation_request);
    is_initial_navigation_ = false;
@@ -63,7 +63,7 @@ index 6a3cca0..0e3de40 100644
    }
  
    // TODO(altimin, crbug.com/933147): Remove this logic after we are done with
-@@ -1013,6 +1021,8 @@ bool NavigationControllerImpl::RendererDidNavigate(
+@@ -1015,6 +1023,8 @@ bool NavigationControllerImpl::RendererDidNavigate(
    if (pending_entry_ && pending_entry_->restore_type() != RestoreType::NONE) {
      pending_entry_->set_restore_type(RestoreType::NONE);
      was_restored = true;
@@ -73,10 +73,10 @@ index 6a3cca0..0e3de40 100644
  
    // If this is a navigation to a matching pending_entry_ and the SiteInstance
 diff --git a/content/browser/frame_host/navigation_request.cc b/content/browser/frame_host/navigation_request.cc
-index 76fc188..b4f6172 100644
+index 35381af..344823c 100644
 --- a/content/browser/frame_host/navigation_request.cc
 +++ b/content/browser/frame_host/navigation_request.cc
-@@ -92,6 +92,7 @@
+@@ -102,6 +102,7 @@
  #include "third_party/blink/public/platform/resource_request_blocked_reason.h"
  #include "third_party/blink/public/platform/web_mixed_content_context_type.h"
  #include "url/url_constants.h"
@@ -84,24 +84,24 @@ index 76fc188..b4f6172 100644
  
  namespace content {
  
-@@ -724,11 +725,15 @@ NavigationRequest::NavigationRequest(
+@@ -879,11 +880,15 @@ NavigationRequest::NavigationRequest(
      }
    }
  
 +  blink::mojom::RendererPreferences renderer_preferences = frame_tree_node_->render_manager()->current_host()->GetDelegate()
 +    ->GetRendererPrefs(frame_tree_node_->navigator()->GetController()->GetBrowserContext());
    std::string user_agent_override;
-   if (commit_params.is_overriding_user_agent ||
+   if (commit_params_->is_overriding_user_agent ||
 +      (renderer_preferences.enable_sodium && entry && url::SodiumWhitelist::IsForceDesktopMode(entry->GetURL())) ||
        (entry && entry->GetIsOverridingUserAgent())) {
      user_agent_override =
          frame_tree_node_->navigator()->GetDelegate()->GetUserAgentOverride();
-+    commit_params_.is_overriding_user_agent = true; // used by navigator.userAgent
++    commit_params_->is_overriding_user_agent = true; // used by navigator.userAgent
    }
  
    net::HttpRequestHeaders headers;
 diff --git a/content/browser/web_contents/web_contents_impl.cc b/content/browser/web_contents/web_contents_impl.cc
-index 21cac3c..45da7c6 100644
+index fbc1dc3..8666730e 100644
 --- a/content/browser/web_contents/web_contents_impl.cc
 +++ b/content/browser/web_contents/web_contents_impl.cc
 @@ -41,6 +41,7 @@
@@ -112,7 +112,7 @@ index 21cac3c..45da7c6 100644
  #include "content/browser/accessibility/accessibility_tree_formatter_blink.h"
  #include "content/browser/bad_message.h"
  #include "content/browser/browser_main_loop.h"
-@@ -138,6 +139,7 @@
+@@ -136,6 +137,7 @@
  #include "content/public/common/referrer_type_converters.h"
  #include "content/public/common/result_codes.h"
  #include "content/public/common/url_utils.h"
@@ -120,7 +120,7 @@ index 21cac3c..45da7c6 100644
  #include "content/public/common/web_preferences.h"
  #include "media/base/user_input_monitor.h"
  #include "net/base/url_util.h"
-@@ -164,6 +166,7 @@
+@@ -162,6 +164,7 @@
  #include "ui/events/base_event_utils.h"
  #include "ui/events/blink/web_input_event_traits.h"
  #include "ui/gl/gl_switches.h"
@@ -128,7 +128,7 @@ index 21cac3c..45da7c6 100644
  
  #if defined(OS_WIN)
  #include "content/browser/renderer_host/dip_util.h"
-@@ -1299,8 +1302,7 @@ void WebContentsImpl::SetUserAgentOverride(const std::string& override,
+@@ -1290,8 +1293,7 @@ void WebContentsImpl::SetUserAgentOverride(const std::string& override,
  
    // Reload the page if a load is currently in progress to avoid having
    // different parts of the page loaded using different user agents.
@@ -138,7 +138,7 @@ index 21cac3c..45da7c6 100644
      controller_.Reload(ReloadType::BYPASSING_CACHE, true);
  
    for (auto& observer : observers_)
-@@ -3189,8 +3191,10 @@ FrameTree* WebContentsImpl::GetFrameTree() {
+@@ -3212,8 +3214,10 @@ FrameTree* WebContentsImpl::GetFrameTree() {
  }
  
  bool WebContentsImpl::IsOverridingUserAgent() {
@@ -151,7 +151,7 @@ index 21cac3c..45da7c6 100644
  }
  
  bool WebContentsImpl::IsJavaScriptDialogShowing() const {
-@@ -7181,6 +7185,17 @@ void WebContentsImpl::UpdateWebContentsVisibility(Visibility visibility) {
+@@ -7237,6 +7241,17 @@ void WebContentsImpl::UpdateWebContentsVisibility(Visibility visibility) {
  }
  
  void WebContentsImpl::UpdateOverridingUserAgent() {

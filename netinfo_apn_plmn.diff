@@ -1,8 +1,8 @@
 diff --git a/content/browser/BUILD.gn b/content/browser/BUILD.gn
-index 32fa9e4..9ed31b2 100644
+index f10e1a8..f8862e8 100644
 --- a/content/browser/BUILD.gn
 +++ b/content/browser/BUILD.gn
-@@ -2430,6 +2430,8 @@ jumbo_source_set("browser") {
+@@ -2367,6 +2367,8 @@ jumbo_source_set("browser") {
        "frame_host/render_frame_host_android.h",
        "media/capture/screen_capture_device_android.cc",
        "media/capture/screen_capture_device_android.h",
@@ -78,10 +78,10 @@ index 0000000..3c8309b
 +
 +#endif  // CONTENT_BROWSER_NETWORK_INFORMATION_IMPL_H_
 diff --git a/content/browser/renderer_host/render_process_host_impl.cc b/content/browser/renderer_host/render_process_host_impl.cc
-index c49bdce..a38a1c3a 100644
+index 8379cdf..3e111c4 100644
 --- a/content/browser/renderer_host/render_process_host_impl.cc
 +++ b/content/browser/renderer_host/render_process_host_impl.cc
-@@ -224,6 +224,7 @@
+@@ -223,6 +223,7 @@
  #include "url/url_constants.h"
  
  #if defined(OS_ANDROID)
@@ -89,7 +89,7 @@ index c49bdce..a38a1c3a 100644
  #include "content/public/browser/android/java_interfaces.h"
  #include "ipc/ipc_sync_channel.h"
  #include "media/audio/android/audio_manager_android.h"
-@@ -2089,6 +2090,8 @@ void RenderProcessHostImpl::RegisterMojoInterfaces() {
+@@ -2021,6 +2022,8 @@ void RenderProcessHostImpl::RegisterMojoInterfaces() {
        hyphenation::HyphenationImpl::GetTaskRunner());
  #endif
  #if defined(OS_ANDROID)
@@ -99,10 +99,10 @@ index c49bdce..a38a1c3a 100644
      registry->AddInterface(
          base::BindRepeating(&FontUniqueNameLookupService::Create),
 diff --git a/content/public/app/content_browser_manifest.cc b/content/public/app/content_browser_manifest.cc
-index b08b7e9..b9d160e 100644
+index 9002c33..dcb6835 100644
 --- a/content/public/app/content_browser_manifest.cc
 +++ b/content/public/app/content_browser_manifest.cc
-@@ -66,6 +66,7 @@ const service_manager::Manifest& GetContentBrowserManifest() {
+@@ -67,6 +67,7 @@ const service_manager::Manifest& GetContentBrowserManifest() {
                    "blink.mojom.Hyphenation",
                    "blink.mojom.MediaStreamTrackMetricsHost",
                    "blink.mojom.MimeRegistry",
@@ -111,10 +111,10 @@ index b08b7e9..b9d160e 100644
                    "blink.mojom.PeriodicBackgroundSyncService",
                    "blink.mojom.PluginRegistry",
 diff --git a/net/android/java/src/org/chromium/net/AndroidNetworkLibrary.java b/net/android/java/src/org/chromium/net/AndroidNetworkLibrary.java
-index aba258c..8edf58b 100644
+index ed09e7f..db7ce92 100644
 --- a/net/android/java/src/org/chromium/net/AndroidNetworkLibrary.java
 +++ b/net/android/java/src/org/chromium/net/AndroidNetworkLibrary.java
-@@ -206,6 +206,11 @@ class AndroidNetworkLibrary {
+@@ -162,6 +162,11 @@ class AndroidNetworkLibrary {
          return AndroidTelephonyManagerBridge.getInstance().getNetworkOperator();
      }
  
@@ -126,7 +126,7 @@ index aba258c..8edf58b 100644
      /**
       * Returns the MCC+MNC (mobile country code + mobile network code) as
       * the numeric name of the current SIM operator.
-@@ -215,6 +220,11 @@ class AndroidNetworkLibrary {
+@@ -171,6 +176,11 @@ class AndroidNetworkLibrary {
          return AndroidTelephonyManagerBridge.getInstance().getSimOperator();
      }
  
@@ -138,7 +138,7 @@ index aba258c..8edf58b 100644
      /**
       * Indicates whether the device is roaming on the currently active network. When true, it
       * suggests that use of data may incur extra costs.
-@@ -229,6 +239,16 @@ class AndroidNetworkLibrary {
+@@ -185,6 +195,16 @@ class AndroidNetworkLibrary {
          return networkInfo.isRoaming();
      }
  
@@ -217,10 +217,10 @@ index d494ea6..9b78854 100644
  
      @MainThread
 diff --git a/net/android/network_library.cc b/net/android/network_library.cc
-index 6ed1e80..7e5728b 100644
+index c7c7644..fb003b5 100644
 --- a/net/android/network_library.cc
 +++ b/net/android/network_library.cc
-@@ -101,17 +101,35 @@ std::string GetTelephonyNetworkOperator() {
+@@ -102,17 +102,35 @@ std::string GetTelephonyNetworkOperator() {
            base::android::AttachCurrentThread()));
  }
  
@@ -257,7 +257,7 @@ index 6ed1e80..7e5728b 100644
    return Java_AndroidNetworkLibrary_getIsCaptivePortal(
        base::android::AttachCurrentThread());
 diff --git a/net/android/network_library.h b/net/android/network_library.h
-index 5bce314..53dc17e 100644
+index 56572b2..f596e21 100644
 --- a/net/android/network_library.h
 +++ b/net/android/network_library.h
 @@ -62,14 +62,17 @@ NET_EXPORT std::string GetTelephonyNetworkCountryIso();
@@ -279,13 +279,13 @@ index 5bce314..53dc17e 100644
  // Returns true if the system's captive portal probe was blocked for the current
  // default data network. The method will return false if the captive portal
 diff --git a/third_party/blink/public/mojom/BUILD.gn b/third_party/blink/public/mojom/BUILD.gn
-index c4cb62f..41216a1 100644
+index a5a94a8..c224624 100644
 --- a/third_party/blink/public/mojom/BUILD.gn
 +++ b/third_party/blink/public/mojom/BUILD.gn
-@@ -83,6 +83,7 @@ mojom("mojom_platform") {
+@@ -84,6 +84,7 @@ mojom("mojom_platform") {
+     "native_file_system/native_file_system_file_writer.mojom",
      "native_file_system/native_file_system_manager.mojom",
      "native_file_system/native_file_system_transfer_token.mojom",
-     "net/ip_address_space.mojom",
 +    "netinfo/network_information.mojom",
      "notifications/notification.mojom",
      "notifications/notification_service.mojom",
@@ -359,7 +359,7 @@ index fe023d9..39063c6 100644
    // type_ is only updated when listening for events, so ask
    // networkStateNotifier if not listening (crbug.com/379841).
 diff --git a/third_party/blink/renderer/modules/netinfo/network_information.h b/third_party/blink/renderer/modules/netinfo/network_information.h
-index 7fe15e5..ab3141d 100644
+index 9e47e33..70821a4a 100644
 --- a/third_party/blink/renderer/modules/netinfo/network_information.h
 +++ b/third_party/blink/renderer/modules/netinfo/network_information.h
 @@ -6,6 +6,8 @@
@@ -371,7 +371,7 @@ index 7fe15e5..ab3141d 100644
  #include "third_party/blink/public/platform/web_connection_type.h"
  #include "third_party/blink/public/platform/web_effective_connection_type.h"
  #include "third_party/blink/renderer/bindings/core/v8/active_script_wrappable.h"
-@@ -30,6 +32,10 @@ class NetworkInformation final
+@@ -29,6 +31,10 @@ class NetworkInformation final
    explicit NetworkInformation(ExecutionContext*);
    ~NetworkInformation() override;
  
@@ -382,7 +382,7 @@ index 7fe15e5..ab3141d 100644
    String type() const;
    double downlinkMax() const;
    String effectiveType();
-@@ -70,6 +76,8 @@ class NetworkInformation final
+@@ -69,6 +75,8 @@ class NetworkInformation final
                              const RegisteredEventListener&) final;
  
   private:
