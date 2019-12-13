@@ -49,26 +49,24 @@ index 1206ac5..30b99a1 100644
          History
        </message>
 diff --git a/chrome/browser/browser_resources.grd b/chrome/browser/browser_resources.grd
-index 87c529b..ad4c60e 100644
+index 87c529b..2b5559d 100644
 --- a/chrome/browser/browser_resources.grd
 +++ b/chrome/browser/browser_resources.grd
-@@ -133,6 +133,19 @@
+@@ -133,6 +133,17 @@
          <include name="IDR_ABOUT_SYS_CSS" file="resources\about_sys\about_sys.css" compress="gzip" flattenhtml="true" type="BINDATA" />
          <include name="IDR_ABOUT_SYS_JS" file="resources\about_sys\about_sys.js" compress="gzip" type="BINDATA" />
        </if>
 +      <include name="IDR_SODIUM_RESULT_INDEX_HTML" file="resources\sodium_result\index.html" flattenhtml="true" allowexternalscript="true" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_MANIFEST_JSON" file="resources\sodium_result\manifest.json" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_VIDEOMARK_64_PNG" file="resources\sodium_result\videomark-64.png" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_VIDEOMARK_96_PNG" file="resources\sodium_result\videomark-96.png" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_VIDEOMARK_192_PNG" file="resources\sodium_result\videomark-192.png" type="BINDATA" skip_minify="true" compress="gzip" />
-+      <include name="IDR_SODIUM_RESULT_STATIC_CSS_MAIN_CSS" file="resources\sodium_result\static\css\main.chunk.css" type="BINDATA" skip_minify="true" compress="gzip" />
-+      <include name="IDR_SODIUM_RESULT_STATIC_JS_2_JS" file="resources\sodium_result\static\js\2.chunk.js" type="BINDATA" skip_minify="true" compress="gzip" />
-+      <include name="IDR_SODIUM_RESULT_STATIC_JS_MAIN_JS" file="resources\sodium_result\static\js\main.chunk.js" type="BINDATA" skip_minify="true" compress="gzip" />
-+      <include name="IDR_SODIUM_RESULT_STATIC_JS_RUNTIME_MAIN_JS" file="resources\sodium_result\static\js\runtime~main.js" type="BINDATA" skip_minify="true" compress="gzip" />
-+      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_ABOUT_HELP_SVG" file="resources\sodium_result\static\media\about-help.svg" type="BINDATA" skip_minify="true" compress="gzip" />
-+      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_DINO_PNG" file="resources\sodium_result\static\media\dino.png" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_STATIC_CSS_MAIN_CSS" file="resources\sodium_result\static\css\main.css" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_STATIC_JS_MAIN_JS" file="resources\sodium_result\static\js\main.js" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_NOIMAGE_SVG" file="resources\sodium_result\static\media\noimage.svg" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_REFRESH_SVG" file="resources\sodium_result\static\media\refresh.svg" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_TIMES_SVG" file="resources\sodium_result\static\media\times.svg" type="BINDATA" skip_minify="true" compress="gzip" />
++      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_USAGE_SVG" file="resources\sodium_result\static\media\usage.svg" type="BINDATA" skip_minify="true" compress="gzip" />
        <include name="IDR_ACCESSIBILITY_HTML" file="resources\accessibility\accessibility.html" flattenhtml="true" allowexternalscript="true" compress="gzip" type="BINDATA" />
        <include name="IDR_ACCESSIBILITY_CSS" file="resources\accessibility\accessibility.css" compress="gzip" type="BINDATA" />
        <include name="IDR_ACCESSIBILITY_JS" file="resources\accessibility\accessibility.js" flattenhtml="true" compress="gzip" type="BINDATA" />
@@ -116,10 +114,10 @@ index afb6489..e8d2674 100644
        origin.host() == chrome::kChromeUIPrintHost ||
 diff --git a/chrome/browser/ui/webui/sodium_result.cc b/chrome/browser/ui/webui/sodium_result.cc
 new file mode 100644
-index 0000000..ecfe1ec
+index 0000000..1cf8a2a
 --- /dev/null
 +++ b/chrome/browser/ui/webui/sodium_result.cc
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,41 @@
 +#include "chrome/browser/ui/webui/sodium_result.h"
 +
 +#include <memory>
@@ -135,19 +133,18 @@ index 0000000..ecfe1ec
 +
 +WebUIDataSource* CreateSodiumResultDataSource() {
 +  WebUIDataSource* html_source = WebUIDataSource::Create(chrome::kChromeUISodiumResultHost);
-+  html_source->AddResourcePath("videomark-64.png",  IDR_SODIUM_RESULT_VIDEOMARK_64_PNG);
-+  html_source->AddResourcePath("videomark-96.png",  IDR_SODIUM_RESULT_VIDEOMARK_96_PNG);
-+  html_source->AddResourcePath("videomark-192.png", IDR_SODIUM_RESULT_VIDEOMARK_192_PNG);
++  html_source->AddResourcePath("manifest.json",            IDR_SODIUM_RESULT_MANIFEST_JSON);
++  html_source->AddResourcePath("videomark-64.png",         IDR_SODIUM_RESULT_VIDEOMARK_64_PNG);
++  html_source->AddResourcePath("videomark-96.png",         IDR_SODIUM_RESULT_VIDEOMARK_96_PNG);
++  html_source->AddResourcePath("videomark-192.png",        IDR_SODIUM_RESULT_VIDEOMARK_192_PNG);
 +
-+  html_source->AddResourcePath("static/css/main.chunk.css", IDR_SODIUM_RESULT_STATIC_CSS_MAIN_CSS);
-+  html_source->AddResourcePath("static/js/2.chunk.js",      IDR_SODIUM_RESULT_STATIC_JS_2_JS);
-+  html_source->AddResourcePath("static/js/main.chunk.js",   IDR_SODIUM_RESULT_STATIC_JS_MAIN_JS);
-+  html_source->AddResourcePath("static/js/runtime~main.js", IDR_SODIUM_RESULT_STATIC_JS_RUNTIME_MAIN_JS);
-+  html_source->AddResourcePath("static/media/about-help.svg", IDR_SODIUM_RESULT_STATIC_MEDIA_ABOUT_HELP_SVG);
-+  html_source->AddResourcePath("static/media/dino.png",       IDR_SODIUM_RESULT_STATIC_MEDIA_DINO_PNG);
-+  html_source->AddResourcePath("static/media/noimage.svg",    IDR_SODIUM_RESULT_STATIC_MEDIA_NOIMAGE_SVG);
-+  html_source->AddResourcePath("static/media/refresh.svg",  IDR_SODIUM_RESULT_STATIC_MEDIA_REFRESH_SVG);
-+  html_source->AddResourcePath("static/media/times.svg",    IDR_SODIUM_RESULT_STATIC_MEDIA_TIMES_SVG);
++  html_source->AddResourcePath("static/css/main.css",      IDR_SODIUM_RESULT_STATIC_CSS_MAIN_CSS);
++  html_source->AddResourcePath("static/js/main.js",        IDR_SODIUM_RESULT_STATIC_JS_MAIN_JS);
++
++  html_source->AddResourcePath("static/media/noimage.svg", IDR_SODIUM_RESULT_STATIC_MEDIA_NOIMAGE_SVG);
++  html_source->AddResourcePath("static/media/refresh.svg", IDR_SODIUM_RESULT_STATIC_MEDIA_REFRESH_SVG);
++  html_source->AddResourcePath("static/media/times.svg",   IDR_SODIUM_RESULT_STATIC_MEDIA_TIMES_SVG);
++  html_source->AddResourcePath("static/media/usage.svg",   IDR_SODIUM_RESULT_STATIC_MEDIA_USAGE_SVG);
 +
 +  html_source->SetDefaultResource(IDR_SODIUM_RESULT_INDEX_HTML);
 +  return html_source;
