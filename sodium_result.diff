@@ -1,5 +1,5 @@
 diff --git a/chrome/android/java/res/menu/main_menu.xml b/chrome/android/java/res/menu/main_menu.xml
-index 4580a99..3c69051 100644
+index 4580a99..3295ba6 100644
 --- a/chrome/android/java/res/menu/main_menu.xml
 +++ b/chrome/android/java/res/menu/main_menu.xml
 @@ -40,6 +40,8 @@
@@ -11,6 +11,15 @@ index 4580a99..3c69051 100644
          <item android:id="@+id/open_history_menu_id"
              android:title="@string/menu_history" />
          <item android:id="@+id/downloads_menu_id"
+@@ -95,6 +97,8 @@
+              android:title="@string/menu_close_all_incognito_tabs" />
+          <item android:id="@+id/menu_group_tabs"
+              android:title="@string/menu_group_tabs" />
++         <item android:id="@+id/overview_sodium_result_id"
++             android:title="@string/menu_sodium_result" />
+          <item android:id="@id/preferences_id"
+              android:title="@string/menu_preferences" />
+     </group>
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
 index d9310b8..8f127fa 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
@@ -34,6 +43,43 @@ index d9310b8..8f127fa 100644
          } else if (id == R.id.open_history_menu_id) {
              if (NewTabPage.isNTPUrl(currentTab.getUrl())) {
                  NewTabPageUma.recordAction(NewTabPageUma.ACTION_OPENED_HISTORY_MANAGER);
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
+index 0275c21..16da2d9 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
+@@ -1818,6 +1818,32 @@ public class ChromeTabbedActivity extends ChromeActivity implements ScreenshotMo
+             getTabModelSelector().getModel(true).closeAllTabs();
+             // TODO(nileshagrawal) Record unique action for this. See bug http://b/5542946.
+             RecordUserAction.record("MobileMenuCloseAllTabs");
++        } else if (id == R.id.overview_sodium_result_id) {
++            String url = "chrome://videomark/";
++            TabModel model = getTabModelSelector().getCurrentModel();
++            Tab ntpTab = null;
++            Tab videomarkTab = null;
++
++            int count = model.getCount();
++            for (int i = 0; i < count; i++) {
++                Tab tab = model.getTabAt(i);
++                if (ntpTab == null && NewTabPage.isNTPUrl(tab.getUrl())) ntpTab = tab;
++                if (videomarkTab == null && tab.getUrl().startsWith(url)) videomarkTab = tab;
++            }
++
++            if (videomarkTab != null) {
++                videomarkTab.reload();
++                // force forcus
++                model.setIndex(TabModelUtils.getTabIndexById(model, videomarkTab.getId()), TabSelectionType.FROM_USER);
++            } else if (ntpTab != null) {
++                ntpTab.loadUrl(new LoadUrlParams(url));
++                // force forcus
++                model.setIndex(TabModelUtils.getTabIndexById(model, ntpTab.getId()), TabSelectionType.FROM_USER);
++            } else {
++                TabCreator tabCreator = getTabCreator(model.isIncognito());
++                if (tabCreator == null) return false;
++                tabCreator.createNewTab(new LoadUrlParams(url, PageTransition.LINK), TabLaunchType.FROM_LINK, getActivityTab());
++            }
+         } else if (id == R.id.focus_url_bar) {
+             boolean isUrlBarVisible = !mOverviewModeController.overviewVisible()
+                     && (!isTablet() || getCurrentTabModel().getCount() != 0);
 diff --git a/chrome/android/java/strings/android_chrome_strings.grd b/chrome/android/java/strings/android_chrome_strings.grd
 index 1206ac5..30b99a1 100644
 --- a/chrome/android/java/strings/android_chrome_strings.grd
