@@ -95,10 +95,10 @@ index a5c50e6..106dba3 100644
  </PreferenceScreen>
 diff --git a/chrome/android/java/res/xml/sodium_preferences.xml b/chrome/android/java/res/xml/sodium_preferences.xml
 new file mode 100644
-index 0000000..09b668f
+index 0000000..1b2cbf1
 --- /dev/null
 +++ b/chrome/android/java/res/xml/sodium_preferences.xml
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,17 @@
 +<?xml version="1.0" encoding="utf-8"?>
 +
 +<PreferenceScreen
@@ -111,6 +111,7 @@ index 0000000..09b668f
 +        android:summaryOff="@string/text_off" />
 +
 +    <org.chromium.chrome.browser.preferences.TextMessagePreference
++        android:key="sodium_description"
 +        android:title="@string/sodium_description"
 +        app:allowDividerBelow="false" />
 +
@@ -205,25 +206,32 @@ index 75983bc..92570df 100644
          } else {
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/preferences/SodiumPreference.java b/chrome/android/java/src/org/chromium/chrome/browser/preferences/SodiumPreference.java
 new file mode 100644
-index 0000000..12fb6e5
+index 0000000..09ad53c
 --- /dev/null
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/preferences/SodiumPreference.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,48 @@
 +package org.chromium.chrome.browser.preferences;
 +
 +import android.os.Bundle;
 +import android.support.v7.preference.PreferenceFragmentCompat;
 +
 +import org.chromium.chrome.R;
++import org.chromium.chrome.browser.customtabs.CustomTabActivity;
 +import org.chromium.chrome.browser.preferences.ChromeSwitchPreference;
++import org.chromium.chrome.browser.preferences.TextMessagePreference;
 +import org.chromium.chrome.browser.preferences.PrefServiceBridge;
 +import org.chromium.chrome.browser.preferences.PreferenceUtils;
++import org.chromium.ui.text.NoUnderlineClickableSpan;
++import org.chromium.ui.text.SpanApplier;
++import org.chromium.ui.text.SpanApplier.SpanInfo;
++import org.chromium.ui.base.WindowAndroid;
 +
 +/**
 + * Fragment to manage Sodium preference and to explain to the user what it does.
 + */
 +public class SodiumPreference extends PreferenceFragmentCompat {
 +    private static final String PREF_SODIUM_SWITCH = "sodium_switch";
++    private static final String PREF_sodium_DESCRIPTION = "sodium_description";
 +
 +    @Override
 +    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -239,13 +247,22 @@ index 0000000..12fb6e5
 +            PrefServiceBridge.getInstance().setSodiumEnabled((boolean) newValue);
 +            return true;
 +        });
++
++        TextMessagePreference sodiumDescription = (TextMessagePreference) findPreference(PREF_sodium_DESCRIPTION);
++        NoUnderlineClickableSpan linkSpan = new NoUnderlineClickableSpan(getResources(), view -> {
++            CustomTabActivity.showInfoPage(WindowAndroid.activityFromContext(getContext()), "chrome://videomark/#/settings");
++        });
++        sodiumDescription.setSummary(
++            SpanApplier.applySpans(getString(R.string.sodium_settings_link),
++            new SpanApplier.SpanInfo("<link>", "</link>", linkSpan))
++        );
 +    }
 +}
 diff --git a/chrome/android/java/strings/android_chrome_strings.grd b/chrome/android/java/strings/android_chrome_strings.grd
-index 1206ac5..2a89e76 100644
+index 1206ac5..509abaa 100644
 --- a/chrome/android/java/strings/android_chrome_strings.grd
 +++ b/chrome/android/java/strings/android_chrome_strings.grd
-@@ -724,6 +724,20 @@ CHAR-LIMIT guidelines:
+@@ -724,6 +724,23 @@ CHAR-LIMIT guidelines:
          Turn on dark theme when your device's dark theme or Battery Saver is on
        </message>
  
@@ -255,6 +272,9 @@ index 1206ac5..2a89e76 100644
 +      </message>
 +      <message name="IDS_SODIUM_DESCRIPTION" desc="Description for Sodium preference">
 +        「動画再生品質の記録」をオンにすると、YouTube、Paravi、TVer で動画を再生する際にその体感品質値の推定に必要な視聴データ (動画の解像度やビットレート、再生の一時停止など) を収集し、動画再生中や再生終了後にその推定品質値を確認できるようになります。
++      </message>
++      <message name="IDS_SODIUM_SETTINGS_LINK" desc="Link for chrome://videomark/#/settings">
++        詳細の設定については、&lt;link&gt;Videomark の設定&lt;/link&gt;をご覧ください
 +      </message>
 +      <message name="IDS_SODIUM_ON" desc="Accessibility description for when enable sodium.">
 +        動画再生品質の記録をオフにします
