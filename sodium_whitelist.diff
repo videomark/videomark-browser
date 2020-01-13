@@ -13,10 +13,10 @@ index 8dee2f5..e7d60e4 100644
      "url_canon.cc",
 diff --git a/url/sodium_whitelist.cc b/url/sodium_whitelist.cc
 new file mode 100644
-index 0000000..bff480f
+index 0000000..c3d0409
 --- /dev/null
 +++ b/url/sodium_whitelist.cc
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,68 @@
 +#include "url/sodium_whitelist.h"
 +
 +#include <array>
@@ -43,6 +43,13 @@ index 0000000..bff480f
 +  static const base::NoDestructor<const std::vector<const std::regex>> kSodiumAllowDomain({
 +    std::regex("^www\\.youtube\\.com$"),
 +    std::regex("^m\\.youtube\\.com$"),
++    std::regex("^www\\.nicovideo\\.jp$"),
++    std::regex("^sp\\.nicovideo\\.jp$"),
++    std::regex("^fod\\.fujitv\\.co\\.jp$"),
++    std::regex("^nhk-ondemand\\.jp$"),
++    std::regex("^pc\\.video\\.dmkt-sp\\.jp$"),
++    std::regex("^abema\\.tv$"),
++    std::regex("^www\\.amazon\\.co\\.jp$"),
 +    std::regex("^tver\\.jp$"),
 +    std::regex("^www\\.paravi\\.jp$")
 +  });
@@ -63,6 +70,12 @@ index 0000000..bff480f
 +
 +bool IsForceDesktopMode(const GURL& url) {
 +  static const base::NoDestructor<const std::vector<const std::regex>> kDesktopModeDomain({
++    std::regex("^fod\\.fujitv\\.co\\.jp$"),
++    std::regex("^fod-sp\\.fujitv\\.co\\.jp$"),
++    std::regex("^pc\\.video\\.dmkt-sp\\.jp$"),
++    std::regex("^video\\.dmkt-sp\\.jp$"),
++    std::regex("^abema\\.tv$"),
++    std::regex("^www\\.amazon\\.co\\.jp$"),
 +    std::regex("^tver\\.jp$"),
 +    std::regex("^www\\.paravi\\.jp$")
 +  });
