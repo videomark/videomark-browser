@@ -95,10 +95,10 @@ index 1206ac5..30b99a1 100644
          History
        </message>
 diff --git a/chrome/browser/browser_resources.grd b/chrome/browser/browser_resources.grd
-index 87c529b..2b5559d 100644
+index 87c529b..41253bd 100644
 --- a/chrome/browser/browser_resources.grd
 +++ b/chrome/browser/browser_resources.grd
-@@ -133,6 +133,17 @@
+@@ -133,6 +133,16 @@
          <include name="IDR_ABOUT_SYS_CSS" file="resources\about_sys\about_sys.css" compress="gzip" flattenhtml="true" type="BINDATA" />
          <include name="IDR_ABOUT_SYS_JS" file="resources\about_sys\about_sys.js" compress="gzip" type="BINDATA" />
        </if>
@@ -110,7 +110,6 @@ index 87c529b..2b5559d 100644
 +      <include name="IDR_SODIUM_RESULT_STATIC_CSS_MAIN_CSS" file="resources\sodium_result\static\css\main.css" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_JS_MAIN_JS" file="resources\sodium_result\static\js\main.js" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_NOIMAGE_SVG" file="resources\sodium_result\static\media\noimage.svg" type="BINDATA" skip_minify="true" compress="gzip" />
-+      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_REFRESH_SVG" file="resources\sodium_result\static\media\refresh.svg" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_TIMES_SVG" file="resources\sodium_result\static\media\times.svg" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_USAGE_SVG" file="resources\sodium_result\static\media\usage.svg" type="BINDATA" skip_minify="true" compress="gzip" />
        <include name="IDR_ACCESSIBILITY_HTML" file="resources\accessibility\accessibility.html" flattenhtml="true" allowexternalscript="true" compress="gzip" type="BINDATA" />
@@ -160,10 +159,10 @@ index afb6489..e8d2674 100644
        origin.host() == chrome::kChromeUIPrintHost ||
 diff --git a/chrome/browser/ui/webui/sodium_result.cc b/chrome/browser/ui/webui/sodium_result.cc
 new file mode 100644
-index 0000000..1cf8a2a
+index 0000000..334f83e
 --- /dev/null
 +++ b/chrome/browser/ui/webui/sodium_result.cc
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,40 @@
 +#include "chrome/browser/ui/webui/sodium_result.h"
 +
 +#include <memory>
@@ -188,7 +187,6 @@ index 0000000..1cf8a2a
 +  html_source->AddResourcePath("static/js/main.js",        IDR_SODIUM_RESULT_STATIC_JS_MAIN_JS);
 +
 +  html_source->AddResourcePath("static/media/noimage.svg", IDR_SODIUM_RESULT_STATIC_MEDIA_NOIMAGE_SVG);
-+  html_source->AddResourcePath("static/media/refresh.svg", IDR_SODIUM_RESULT_STATIC_MEDIA_REFRESH_SVG);
 +  html_source->AddResourcePath("static/media/times.svg",   IDR_SODIUM_RESULT_STATIC_MEDIA_TIMES_SVG);
 +  html_source->AddResourcePath("static/media/usage.svg",   IDR_SODIUM_RESULT_STATIC_MEDIA_USAGE_SVG);
 +
