@@ -1,9 +1,9 @@
 diff --git a/content/browser/BUILD.gn b/content/browser/BUILD.gn
-index f10e1a8..0582869 100644
+index 75fc9d9..11a7f17 100644
 --- a/content/browser/BUILD.gn
 +++ b/content/browser/BUILD.gn
-@@ -1755,6 +1755,10 @@ jumbo_source_set("browser") {
-     "sms/sms_provider.h",
+@@ -1738,6 +1738,10 @@ jumbo_source_set("browser") {
+     "sms/sms_queue.h",
      "sms/sms_service.cc",
      "sms/sms_service.h",
 +    "sodium/sodium_storage_value_store.cc",
@@ -13,31 +13,31 @@ index f10e1a8..0582869 100644
      "speech/speech_recognition_dispatcher_host.cc",
      "speech/speech_recognition_dispatcher_host.h",
      "speech/speech_recognition_manager_impl.cc",
-diff --git a/content/browser/frame_host/render_frame_host_impl.cc b/content/browser/frame_host/render_frame_host_impl.cc
-index f25b4fa..2edf6fe 100644
---- a/content/browser/frame_host/render_frame_host_impl.cc
-+++ b/content/browser/frame_host/render_frame_host_impl.cc
-@@ -103,6 +103,7 @@
- #include "content/browser/scoped_active_url.h"
+diff --git a/content/browser/renderer_host/render_process_host_impl.cc b/content/browser/renderer_host/render_process_host_impl.cc
+index 60dc1b6..6f12da6 100644
+--- a/content/browser/renderer_host/render_process_host_impl.cc
++++ b/content/browser/renderer_host/render_process_host_impl.cc
+@@ -135,6 +135,7 @@
+ #include "content/browser/resolve_proxy_msg_helper.h"
  #include "content/browser/service_worker/service_worker_context_wrapper.h"
- #include "content/browser/sms/sms_service.h"
+ #include "content/browser/site_instance_impl.h"
 +#include "content/browser/sodium/sodium_storage_area_host_impl.h"
- #include "content/browser/speech/speech_recognition_dispatcher_host.h"
- #include "content/browser/speech/speech_synthesis_impl.h"
  #include "content/browser/storage_partition_impl.h"
-@@ -4297,6 +4298,9 @@ void RenderFrameHostImpl::RegisterMojoInterfaces() {
-       base::BindRepeating(&PermissionServiceContext::CreateService,
-                           base::Unretained(permission_service_context_.get())));
+ #include "content/browser/theme_helper.h"
+ #include "content/browser/tracing/background_tracing_manager_impl.h"
+@@ -2204,6 +2205,9 @@ void RenderProcessHostImpl::RegisterMojoInterfaces() {
+   }
+ #endif
  
-+  registry_->AddInterface(
-+      base::Bind(&SodiumStorageAreaHostImpl::Create, process_->GetID()));
++  registry->AddInterface(
++      base::BindRepeating(&SodiumStorageAreaHostImpl::Create, GetID()));
 +
-   registry_->AddInterface(base::BindRepeating(
-       [](RenderFrameHostImpl* frame,
-          mojo::PendingReceiver<blink::mojom::PresentationService> receiver) {
+ #if defined(OS_WIN)
+   registry->AddInterface(
+       base::BindRepeating(&DWriteFontProxyImpl::Create),
 diff --git a/content/browser/sodium/sodium_storage_area_host_impl.cc b/content/browser/sodium/sodium_storage_area_host_impl.cc
 new file mode 100644
-index 0000000..dc24a4e
+index 0000000..d62fcde
 --- /dev/null
 +++ b/content/browser/sodium/sodium_storage_area_host_impl.cc
 @@ -0,0 +1,116 @@
@@ -45,7 +45,7 @@ index 0000000..dc24a4e
 +
 +#include "content/public/browser/render_process_host.h"
 +#include "content/public/browser/browser_context.h"
-+#include "mojo/public/cpp/bindings/strong_binding.h"
++#include "mojo/public/cpp/bindings/self_owned_receiver.h"
 +
 +#include "content/browser/sodium/sodium_storage_value_store.h"
 +
@@ -55,8 +55,8 @@ index 0000000..dc24a4e
 +
 +SodiumStorageAreaHostImpl::~SodiumStorageAreaHostImpl() = default;
 +
-+void SodiumStorageAreaHostImpl::Create(int process_id, blink::mojom::SodiumStorageAreaHostRequest request) {
-+  mojo::MakeStrongBinding(std::make_unique<SodiumStorageAreaHostImpl>(process_id), std::move(request));
++void SodiumStorageAreaHostImpl::Create(int process_id, mojo::PendingReceiver<blink::mojom::SodiumStorageAreaHost> receiver) {
++  mojo::MakeSelfOwnedReceiver(std::make_unique<SodiumStorageAreaHostImpl>(process_id), std::move(receiver));
 +}
 +
 +std::unique_ptr<SodiumStorageValueStore> SodiumStorageAreaHostImpl::GetValueStore(const std::string& area) {
@@ -159,7 +159,7 @@ index 0000000..dc24a4e
 +}  // namespace content
 diff --git a/content/browser/sodium/sodium_storage_area_host_impl.h b/content/browser/sodium/sodium_storage_area_host_impl.h
 new file mode 100644
-index 0000000..6e24271
+index 0000000..0937eec
 --- /dev/null
 +++ b/content/browser/sodium/sodium_storage_area_host_impl.h
 @@ -0,0 +1,32 @@
@@ -177,7 +177,7 @@ index 0000000..6e24271
 +  explicit SodiumStorageAreaHostImpl(int process_id);
 +  ~SodiumStorageAreaHostImpl() override;
 +
-+  static void Create(int process_id, blink::mojom::SodiumStorageAreaHostRequest request);
++  static void Create(int process_id, mojo::PendingReceiver<blink::mojom::SodiumStorageAreaHost> receiver);
 +
 + private:
 +  std::unique_ptr<SodiumStorageValueStore> GetValueStore(const std::string& area);
@@ -303,22 +303,22 @@ index 0000000..409f852
 +
 +#endif  // CONTENT_BROWSER_SODIUM_SODIUM_STORAGE_VALUE_STORE_H_
 diff --git a/content/public/app/content_browser_manifest.cc b/content/public/app/content_browser_manifest.cc
-index 9002c33..eadcde9 100644
+index 7564c27..814c2b2 100644
 --- a/content/public/app/content_browser_manifest.cc
 +++ b/content/public/app/content_browser_manifest.cc
-@@ -250,6 +250,7 @@ const service_manager::Manifest& GetContentBrowserManifest() {
-                   "blink.mojom.SharedWorkerConnector",
-                   "blink.mojom.SmsReceiver",
-                   "blink.mojom.SpeechRecognizer",
+@@ -70,6 +70,7 @@ const service_manager::Manifest& GetContentBrowserManifest() {
+                   "blink.mojom.PluginRegistry",
+                   "blink.mojom.PushMessaging",
+                   "blink.mojom.ReportingServiceProxy",
 +                  "blink.mojom.SodiumStorageAreaHost",
-                   "blink.mojom.TextSuggestionHost",
-                   "blink.mojom.UnhandledTapNotifier",
-                   "blink.mojom.WakeLockService",
+                   "blink.mojom.SpeechSynthesis",
+                   "blink.mojom.StoragePartitionService",
+                   "blink.mojom.WebDatabaseHost",
 diff --git a/third_party/blink/public/mojom/BUILD.gn b/third_party/blink/public/mojom/BUILD.gn
-index a5a94a8..89d76eb 100644
+index c33e993..318b8a9 100644
 --- a/third_party/blink/public/mojom/BUILD.gn
 +++ b/third_party/blink/public/mojom/BUILD.gn
-@@ -119,6 +119,7 @@ mojom("mojom_platform") {
+@@ -130,6 +130,7 @@ mojom("mojom_platform") {
      "service_worker/service_worker_stream_handle.mojom",
      "site_engagement/site_engagement.mojom",
      "sms/sms_receiver.mojom",
@@ -349,10 +349,10 @@ index 0000000..8e1c032
 +  clear(string area) => ();
 +};
 diff --git a/third_party/blink/renderer/modules/BUILD.gn b/third_party/blink/renderer/modules/BUILD.gn
-index 30dcfb2..d9b2b9a 100644
+index 18cc391..536aeca 100644
 --- a/third_party/blink/renderer/modules/BUILD.gn
 +++ b/third_party/blink/renderer/modules/BUILD.gn
-@@ -154,6 +154,7 @@ target("jumbo_" + modules_target_type, "modules") {
+@@ -136,6 +136,7 @@ jumbo_component("modules") {
      "//third_party/blink/renderer/modules/service_worker",
      "//third_party/blink/renderer/modules/shapedetection",
      "//third_party/blink/renderer/modules/sms",
@@ -361,10 +361,10 @@ index 30dcfb2..d9b2b9a 100644
      "//third_party/blink/renderer/modules/srcobject",
      "//third_party/blink/renderer/modules/storage",
 diff --git a/third_party/blink/renderer/modules/modules_idl_files.gni b/third_party/blink/renderer/modules/modules_idl_files.gni
-index 6209ed07..713e5e9 100644
+index f6dae1f..8f02bc7 100644
 --- a/third_party/blink/renderer/modules/modules_idl_files.gni
 +++ b/third_party/blink/renderer/modules/modules_idl_files.gni
-@@ -329,6 +329,11 @@ modules_idl_files =
+@@ -330,6 +330,11 @@ modules_idl_files =
            "shapedetection/detected_text.idl",
            "shapedetection/face_detector.idl",
            "shapedetection/text_detector.idl",
@@ -376,7 +376,7 @@ index 6209ed07..713e5e9 100644
            "speech/speech_grammar.idl",
            "speech/speech_grammar_list.idl",
            "speech/speech_recognition.idl",
-@@ -999,6 +1004,7 @@ modules_dependency_idl_files =
+@@ -1028,6 +1033,7 @@ modules_dependency_idl_files =
            "screen_orientation/screen_screen_orientation.idl",
            "service_worker/navigator_service_worker.idl",
            "sms/navigator_sms.idl",
@@ -563,21 +563,21 @@ index 0000000..53ba1cb9
 +};
 diff --git a/third_party/blink/renderer/modules/sodium/sodium_storage_area.cc b/third_party/blink/renderer/modules/sodium/sodium_storage_area.cc
 new file mode 100644
-index 0000000..ce1c91f
+index 0000000..acc6842
 --- /dev/null
 +++ b/third_party/blink/renderer/modules/sodium/sodium_storage_area.cc
 @@ -0,0 +1,362 @@
 +#include "third_party/blink/renderer/modules/sodium/sodium_storage_area.h"
 +
++#include "third_party/blink/public/common/thread_safe_browser_interface_broker_proxy.h"
 +#include "third_party/blink/renderer/platform/bindings/exception_state.h"
 +#include "third_party/blink/renderer/platform/wtf/shared_buffer.h"
 +#include "third_party/blink/renderer/bindings/core/v8/serialization/serialized_script_value.h"
 +#include "third_party/blink/renderer/core/frame/local_frame.h"
-+#include "services/service_manager/public/cpp/interface_provider.h"
 +
 +namespace blink {
 +
-+SodiumStorageArea::SodiumStorageArea(LocalFrame* frame, std::string area) : ContextClient(frame), area_(area) {}
++SodiumStorageArea::SodiumStorageArea(LocalFrame* frame, WTF::String area) : ContextClient(frame), area_(area) {}
 +
 +void SodiumStorageArea::Trace(blink::Visitor* visitor) {
 +  ScriptWrappable::Trace(visitor);
@@ -598,13 +598,14 @@ index 0000000..ce1c91f
 +void SodiumStorageArea::doGet(ScriptState* script_state,
 +                              V8SodiumStorageAreaGetCallback* callback,
 +                              ExceptionState* exception_state) {
++  v8::Isolate* isolate = script_state->GetIsolate();
 +  LOG(INFO) << "SodiumStorageArea::doGet(): exception_state:" << exception_state->Code();
 +  if (exception_state->HadException()) {
-+    if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(script_state));
++    if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(isolate));
 +    return;
 +  }
 +
-+  v8::Local<v8::Object> out_items = v8::Object::New(script_state->GetIsolate());
++  v8::Local<v8::Object> out_items = v8::Object::New(isolate);
 +  doGet(script_state, nullptr, out_items, callback, exception_state);
 +}
 +
@@ -641,14 +642,14 @@ index 0000000..ce1c91f
 +    v8::Local<v8::Array> property_names(v8key_object->GetOwnPropertyNames(context).ToLocalChecked());
 +    Vector<std::pair<String, ScriptValue>> items(0);
 +    for (uint32_t i = 0; i < property_names->Length(); ++i) {
-+      items.push_back(std::make_pair(V8ValueToWTFString(isolate, property_names->Get(context, i)), ScriptValue(script_state, v8key_object->Get(context, property_names->Get(context, i).ToLocalChecked()))));
++      items.push_back(std::make_pair(V8ValueToWTFString(isolate, property_names->Get(context, i)), ScriptValue(isolate, v8key_object->Get(context, property_names->Get(context, i).ToLocalChecked()))));
 +    }
 +
 +    get(script_state, items, callback, exception_state);
 +    return;
 +  }
 +
-+  if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(script_state));
++  if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(isolate));
 +
 +  //ExecutionContext* context = ExecutionContext::From(script_state);
 +  //context->GetTaskRunner(TaskType::kUserInteraction)->PostTask(FROM_HERE,
@@ -684,13 +685,14 @@ index 0000000..ce1c91f
 +                              const Vector<String>* keys,
 +                              V8SodiumStorageAreaGetCallback* callback,
 +                              ExceptionState* exception_state) {
++  v8::Isolate* isolate = script_state->GetIsolate();
 +  LOG(INFO) << "SodiumStorageArea::doGet(): exception_state:" << exception_state->Code();
 +  if (exception_state->HadException()) {
-+    if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(script_state));
++    if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(isolate));
 +    return;
 +  }
 +
-+  v8::Local<v8::Object> out_items = v8::Object::New(script_state->GetIsolate());
++  v8::Local<v8::Object> out_items = v8::Object::New(isolate);
 +  base::ListValue host_keys = base::ListValue();
 +  for (const String& key: *keys) {
 +    host_keys.AppendString(key.Utf8().data());
@@ -715,13 +717,13 @@ index 0000000..ce1c91f
 +                              const Vector<std::pair<String, ScriptValue>>* items,
 +                              V8SodiumStorageAreaGetCallback* callback,
 +                              ExceptionState* exception_state) {
++  v8::Isolate* isolate = script_state->GetIsolate();
 +  LOG(INFO) << "SodiumStorageArea::doGet(): exception_state:" << exception_state->Code();
 +  if (exception_state->HadException()) {
-+    if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(script_state));
++    if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(isolate));
 +    return;
 +  }
 +
-+  v8::Isolate* isolate = script_state->GetIsolate();
 +  v8::Local<v8::Context> context = script_state->GetContext();
 +  v8::Local<v8::Object> out_items = v8::Object::New(isolate);
 +  base::ListValue host_keys = base::ListValue();
@@ -729,7 +731,7 @@ index 0000000..ce1c91f
 +    host_keys.AppendString(p.first.Utf8().data());
 +    v8::Local<v8::String> out_key = v8::String::NewFromUtf8(isolate, p.first.Utf8().data(), v8::NewStringType::kNormal).ToLocalChecked();
 +    if (!out_items->Set(context, out_key, p.second.V8Value()).ToChecked()) {
-+      if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(script_state));
++      if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(isolate));
 +      return;
 +    }
 +  }
@@ -742,44 +744,44 @@ index 0000000..ce1c91f
 +                              v8::Local<v8::Object>& out_items,
 +                              V8SodiumStorageAreaGetCallback* callback,
 +                              ExceptionState* exception_state) {
++  v8::Isolate* isolate = script_state->GetIsolate();
 +  base::Value host_items;
 +  if (!SetupHost()) {
 +    LOG(INFO) << "SodiumStorageArea::doGet(): SetupHost() failed.";
-+    if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(script_state));
++    if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(isolate));
 +    return;
 +  }
 +  if (host_keys) {
 +    if (!host_->get(area_, std::move(*host_keys), &host_items)) {
 +      LOG(INFO) << "SodiumStorageArea::doGet(): host_->get() failed.";
-+      if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(script_state));
++      if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(isolate));
 +      return;
 +    }
 +  } else {
 +    if (!host_->getAll(area_, &host_items)) {
 +      LOG(INFO) << "SodiumStorageArea::doGet(): host_->getAll() failed.";
-+      if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(script_state));
++      if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(isolate));
 +      return;
 +    }
 +  }
 +
-+  v8::Isolate* isolate = script_state->GetIsolate();
 +  v8::Local<v8::Context> context = script_state->GetContext();
 +  for (const auto& iter : host_items.DictItems()) {
 +    v8::Local<v8::String> out_key = v8::String::NewFromUtf8(isolate, iter.first.data(), v8::NewStringType::kNormal).ToLocalChecked();
 +    base::Value::BlobStorage out_blob = iter.second.GetBlob();
 +    scoped_refptr<SharedBuffer> out_buffer = SharedBuffer::Create(out_blob.data(), out_blob.size());
 +    scoped_refptr<SerializedScriptValue> deserialize_value = SerializedScriptValue::Create(out_buffer);
-+    if (!out_items->Set(context, out_key, deserialize_value->Deserialize(script_state->GetIsolate())).ToChecked()) {
-+      if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(script_state));
++    if (!out_items->Set(context, out_key, deserialize_value->Deserialize(isolate)).ToChecked()) {
++      if (callback) callback->InvokeAndReportException(nullptr, ScriptValue::CreateNull(isolate));
 +      return;
 +    }
 +  }
 +
-+  if (callback) callback->Invoke(nullptr, ScriptValue(script_state, out_items)).IsJust();
++  if (callback) callback->Invoke(nullptr, ScriptValue(isolate, out_items)).IsJust();
 +}
 +
 +void SodiumStorageArea::set(ScriptState* script_state,
-+                            const Vector<std::pair<String, ScriptValue>>& items,
++                            const HeapVector<std::pair<String, ScriptValue>>& items,
 +                            V8SodiumStorageAreaCallback* callback,
 +                            ExceptionState& exception_state) {
 +  LOG(INFO) << "SodiumStorageArea::set(): exception_state:" << exception_state.Code();
@@ -791,7 +793,7 @@ index 0000000..ce1c91f
 +}
 +
 +void SodiumStorageArea::doSet(ScriptState* script_state,
-+                              const Vector<std::pair<String, ScriptValue>>* items,
++                              const HeapVector<std::pair<String, ScriptValue>>* items,
 +                              V8SodiumStorageAreaCallback* callback,
 +                              ExceptionState* exception_state) {
 +  LOG(INFO) << "SodiumStorageArea::doSet(): exception_state:" << exception_state->Code();
@@ -800,12 +802,13 @@ index 0000000..ce1c91f
 +    return;
 +  }
 +
++  v8::Isolate* isolate = script_state->GetIsolate();
 +  SerializedScriptValue::SerializeOptions serialize_options;
 +  serialize_options.for_storage = SerializedScriptValue::kForStorage;
 +  base::DictionaryValue host_items = base::DictionaryValue();
 +  for (std::pair<String, ScriptValue> p: *items) {
 +    scoped_refptr<SerializedScriptValue> serialized_value = SerializedScriptValue::Serialize(
-+      script_state->GetIsolate(), p.second.V8Value(), serialize_options, *exception_state);
++      isolate, p.second.V8Value(), serialize_options, *exception_state);
 +    base::span<const uint8_t> wire_data = serialized_value->GetWireData();
 +    host_items.Set(p.first.Utf8().data(), base::Value::ToUniquePtrValue(base::Value(wire_data)));
 +  }
@@ -918,31 +921,29 @@ index 0000000..ce1c91f
 +}
 +
 +bool SodiumStorageArea::SetupHost() {
-+  LocalFrame* frame = GetFrame();
-+  if (frame) {
-+    if (!host_) {
-+      frame->GetInterfaceProvider().GetInterface(mojo::MakeRequest(&host_));
-+    }
-+    return (bool) host_;
++  if (!host_.is_bound()) {
++    LOG(INFO) << "SodiumStorageArea::SetupHost(): connecting...";
++    Platform::Current()->GetBrowserInterfaceBroker()->GetInterface(host_.BindNewPipeAndPassReceiver());
 +  }
-+  return false;
++  return host_.is_bound();
 +}
 +
 +}  // namespace blink
 diff --git a/third_party/blink/renderer/modules/sodium/sodium_storage_area.h b/third_party/blink/renderer/modules/sodium/sodium_storage_area.h
 new file mode 100644
-index 0000000..2839add
+index 0000000..e26f5b6
 --- /dev/null
 +++ b/third_party/blink/renderer/modules/sodium/sodium_storage_area.h
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,112 @@
 +#ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_SODIUM_SODIUM_STORAGE_AREA_H_
 +#define THIRD_PARTY_BLINK_RENDERER_MODULES_SODIUM_SODIUM_STORAGE_AREA_H_
 +
 +#include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
 +#include "third_party/blink/renderer/core/execution_context/context_lifecycle_observer.h"
 +#include "third_party/blink/renderer/bindings/core/v8/script_value.h"
++#include "mojo/public/cpp/bindings/remote.h"
 +
-+#include "third_party/blink/public/mojom/sodium/sodium_storage_area.mojom.h"
++#include "third_party/blink/public/mojom/sodium/sodium_storage_area.mojom-blink.h"
 +#include "third_party/blink/renderer/bindings/modules/v8/v8_sodium_storage_area_callback.h"
 +#include "third_party/blink/renderer/bindings/modules/v8/v8_sodium_storage_area_get_callback.h"
 +
@@ -953,7 +954,7 @@ index 0000000..2839add
 +  USING_GARBAGE_COLLECTED_MIXIN(SodiumStorageArea);
 +
 + public:
-+  explicit SodiumStorageArea(LocalFrame*, std::string);
++  explicit SodiumStorageArea(LocalFrame*, WTF::String);
 +  void Trace(blink::Visitor*) override;
 +
 +  void get(ScriptState*,
@@ -981,7 +982,7 @@ index 0000000..2839add
 +           ExceptionState&);
 +
 +  void set(ScriptState*,
-+           const Vector<std::pair<String, ScriptValue>>& items,
++           const HeapVector<std::pair<String, ScriptValue>>& items,
 +           V8SodiumStorageAreaCallback*,
 +           ExceptionState&);
 +
@@ -1023,7 +1024,7 @@ index 0000000..2839add
 +             ExceptionState*);
 +
 +  void doSet(ScriptState*,
-+             const Vector<std::pair<String, ScriptValue>>* items,
++             const HeapVector<std::pair<String, ScriptValue>>* items,
 +             V8SodiumStorageAreaCallback*,
 +             ExceptionState*);
 +
@@ -1036,11 +1037,11 @@ index 0000000..2839add
 +               V8SodiumStorageAreaCallback*,
 +               ExceptionState*);
 +
-+  std::string area_;
++  WTF::String area_;
 +
 +  bool SetupHost();
 +
-+  mojom::SodiumStorageAreaHostPtr host_;
++  mojo::Remote<mojom::blink::SodiumStorageAreaHost> host_;
 +};
 +
 +}  // namespace blink

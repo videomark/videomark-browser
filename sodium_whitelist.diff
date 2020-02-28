@@ -1,8 +1,8 @@
 diff --git a/url/BUILD.gn b/url/BUILD.gn
-index 8dee2f5..e7d60e4 100644
+index 5d6b897..e347a50 100644
 --- a/url/BUILD.gn
 +++ b/url/BUILD.gn
-@@ -24,6 +24,8 @@ component("url") {
+@@ -25,6 +25,8 @@ component("url") {
      "origin.h",
      "scheme_host_port.cc",
      "scheme_host_port.h",

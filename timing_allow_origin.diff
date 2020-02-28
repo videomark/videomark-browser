@@ -4,10 +4,10 @@
 * https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/core/LICENSE-LGPL-2.1
 
 diff --git a/third_party/blink/renderer/core/timing/performance.cc b/third_party/blink/renderer/core/timing/performance.cc
-index 08e1d7e..9d59dd2 100644
+index a1f4d2f..66d0ef6 100644
 --- a/third_party/blink/renderer/core/timing/performance.cc
 +++ b/third_party/blink/renderer/core/timing/performance.cc
-@@ -44,6 +44,8 @@
+@@ -50,6 +50,8 @@
  #include "third_party/blink/renderer/core/dom/dom_exception.h"
  #include "third_party/blink/renderer/core/dom/events/event.h"
  #include "third_party/blink/renderer/core/execution_context/execution_context.h"
@@ -16,7 +16,7 @@ index 08e1d7e..9d59dd2 100644
  #include "third_party/blink/renderer/core/frame/local_frame.h"
  #include "third_party/blink/renderer/core/inspector/console_message.h"
  #include "third_party/blink/renderer/core/loader/document_load_timing.h"
-@@ -70,6 +72,7 @@
+@@ -76,6 +78,7 @@
  #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
  #include "third_party/blink/renderer/platform/weborigin/security_origin.h"
  #include "third_party/blink/renderer/platform/wtf/std_lib_extras.h"
@@ -24,10 +24,11 @@ index 08e1d7e..9d59dd2 100644
  
  namespace blink {
  
-@@ -336,6 +339,17 @@ bool Performance::PassesTimingAllowCheck(
-     const ResourceResponse& response,
-     const SecurityOrigin& initiator_security_origin,
-     ExecutionContext* context) {
+@@ -385,6 +388,18 @@ bool Performance::PassesTimingAllowCheck(
+     bool* tainted_origin_flag) {
+   DCHECK(response_tainting_not_basic);
+   DCHECK(tainted_origin_flag);
++
 +  LocalDOMWindow* window = context->ExecutingWindow();
 +  if (window) {
 +    LocalFrame* frame = window->GetFrame();

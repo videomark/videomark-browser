@@ -1,9 +1,9 @@
 diff --git a/chrome/android/java/res/menu/main_menu.xml b/chrome/android/java/res/menu/main_menu.xml
-index 4580a99..3295ba6 100644
+index f2c7c73..792fcbe 100644
 --- a/chrome/android/java/res/menu/main_menu.xml
 +++ b/chrome/android/java/res/menu/main_menu.xml
-@@ -40,6 +40,8 @@
-             android:title="@null" />
+@@ -45,6 +45,8 @@
+             android:title="@string/menu_bookmarks" />
          <item android:id="@+id/recent_tabs_menu_id"
              android:title="@string/menu_recent_tabs" />
 +        <item android:id="@+id/sodium_result_id"
@@ -11,23 +11,23 @@ index 4580a99..3295ba6 100644
          <item android:id="@+id/open_history_menu_id"
              android:title="@string/menu_history" />
          <item android:id="@+id/downloads_menu_id"
-@@ -95,6 +97,8 @@
-              android:title="@string/menu_close_all_incognito_tabs" />
-          <item android:id="@+id/menu_group_tabs"
-              android:title="@string/menu_group_tabs" />
-+         <item android:id="@+id/overview_sodium_result_id"
-+             android:title="@string/menu_sodium_result" />
-          <item android:id="@id/preferences_id"
-              android:title="@string/menu_preferences" />
+@@ -102,6 +104,8 @@
+             android:title="@string/menu_close_all_incognito_tabs" />
+         <item android:id="@+id/menu_group_tabs"
+             android:title="@string/menu_group_tabs" />
++        <item android:id="@+id/overview_sodium_result_id"
++            android:title="@string/menu_sodium_result" />
+         <item android:id="@id/preferences_id"
+             android:title="@string/menu_settings" />
      </group>
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
-index d9310b8..8f127fa 100644
+index 40f1b34..7e7674b 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
-@@ -2144,6 +2144,18 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
-         } else if (id == R.id.info_menu_id) {
-             PageInfoController.show(
-                     this, currentTab, null, PageInfoController.OpenedFromSource.MENU);
+@@ -2057,6 +2057,18 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
+                     PageInfoController.OpenedFromSource.MENU,
+                     /*offlinePageLoadUrlDelegate=*/
+                     new OfflinePageUtils.TabOfflinePageLoadUrlDelegate(currentTab));
 +        } else if (id == R.id.sodium_result_id) {
 +            String url = "chrome://videomark/";
 +            if (NewTabPage.isNTPUrl(currentTab.getUrl())) {
@@ -40,14 +40,14 @@ index d9310b8..8f127fa 100644
 +
 +                tabCreator.createNewTab(new LoadUrlParams(url, PageTransition.LINK), TabLaunchType.FROM_LINK, getActivityTab());
 +            }
-         } else if (id == R.id.open_history_menu_id) {
-             if (NewTabPage.isNTPUrl(currentTab.getUrl())) {
-                 NewTabPageUma.recordAction(NewTabPageUma.ACTION_OPENED_HISTORY_MANAGER);
+         } else if (id == R.id.translate_id) {
+             RecordUserAction.record("MobileMenuTranslate");
+             Tracker tracker =
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
-index 0275c21..16da2d9 100644
+index b84b61a..916cf44 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
-@@ -1818,6 +1818,32 @@ public class ChromeTabbedActivity extends ChromeActivity implements ScreenshotMo
+@@ -1747,6 +1747,32 @@ public class ChromeTabbedActivity extends ChromeActivity {
              getTabModelSelector().getModel(true).closeAllTabs();
              // TODO(nileshagrawal) Record unique action for this. See bug http://b/5542946.
              RecordUserAction.record("MobileMenuCloseAllTabs");
@@ -80,25 +80,11 @@ index 0275c21..16da2d9 100644
          } else if (id == R.id.focus_url_bar) {
              boolean isUrlBarVisible = !mOverviewModeController.overviewVisible()
                      && (!isTablet() || getCurrentTabModel().getCount() != 0);
-diff --git a/chrome/android/java/strings/android_chrome_strings.grd b/chrome/android/java/strings/android_chrome_strings.grd
-index 1206ac5..30b99a1 100644
---- a/chrome/android/java/strings/android_chrome_strings.grd
-+++ b/chrome/android/java/strings/android_chrome_strings.grd
-@@ -2959,6 +2959,9 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
-       <message name="IDS_MENU_RECENT_TABS" desc="Menu item for opening the 'Recent tabs' page that shows recently closed tabs and pages the user has opened on his/her other devices. [CHAR-LIMIT=27]">
-         Recent tabs
-       </message>
-+      <message name="IDS_MENU_SODIUM_RESULT" desc="Menu item for Sodium result">
-+        動画の視聴結果を確認
-+      </message>
-       <message name="IDS_MENU_HISTORY" desc="Menu item for opening the history page. [CHAR-LIMIT=27]">
-         History
-       </message>
 diff --git a/chrome/browser/browser_resources.grd b/chrome/browser/browser_resources.grd
-index 87c529b..41253bd 100644
+index fdbec15..fcaf349 100644
 --- a/chrome/browser/browser_resources.grd
 +++ b/chrome/browser/browser_resources.grd
-@@ -133,6 +133,16 @@
+@@ -75,6 +75,16 @@
          <include name="IDR_ABOUT_SYS_CSS" file="resources\about_sys\about_sys.css" compress="gzip" flattenhtml="true" type="BINDATA" />
          <include name="IDR_ABOUT_SYS_JS" file="resources\about_sys\about_sys.js" compress="gzip" type="BINDATA" />
        </if>
@@ -112,14 +98,14 @@ index 87c529b..41253bd 100644
 +      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_NOIMAGE_SVG" file="resources\sodium_result\static\media\noimage.svg" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_TIMES_SVG" file="resources\sodium_result\static\media\times.svg" type="BINDATA" skip_minify="true" compress="gzip" />
 +      <include name="IDR_SODIUM_RESULT_STATIC_MEDIA_USAGE_SVG" file="resources\sodium_result\static\media\usage.svg" type="BINDATA" skip_minify="true" compress="gzip" />
-       <include name="IDR_ACCESSIBILITY_HTML" file="resources\accessibility\accessibility.html" flattenhtml="true" allowexternalscript="true" compress="gzip" type="BINDATA" />
-       <include name="IDR_ACCESSIBILITY_CSS" file="resources\accessibility\accessibility.css" compress="gzip" type="BINDATA" />
-       <include name="IDR_ACCESSIBILITY_JS" file="resources\accessibility\accessibility.js" flattenhtml="true" compress="gzip" type="BINDATA" />
+       <include name="IDR_AD_NETWORK_HASHES" file="resources\ad_networks.dat" type="BINDATA" />
+       <if expr="is_posix and not is_macosx">
+         <include name="IDR_CERTIFICATE_VIEWER_HTML" file="resources\certificate_viewer.html" compress="gzip" type="BINDATA" />
 diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
-index 1826b71..b98ac80 100644
+index efacc93..a942678 100644
 --- a/chrome/browser/ui/BUILD.gn
 +++ b/chrome/browser/ui/BUILD.gn
-@@ -335,6 +335,8 @@ jumbo_split_static_library("ui") {
+@@ -327,6 +327,8 @@ jumbo_static_library("ui") {
      "webui/webui_load_timer.h",
      "webui/webui_util.cc",
      "webui/webui_util.h",
@@ -128,11 +114,25 @@ index 1826b71..b98ac80 100644
    ]
  
    if (is_win || is_mac) {
+diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+index 2656c49..0381561c 100644
+--- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
++++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+@@ -2827,6 +2827,9 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
+       <message name="IDS_MENU_RECENT_TABS" desc="Menu item for opening the 'Recent tabs' page that shows recently closed tabs and pages the user has opened on his/her other devices. [CHAR-LIMIT=27]">
+         Recent tabs
+       </message>
++      <message name="IDS_MENU_SODIUM_RESULT" desc="Menu item for Sodium result">
++        動画の視聴結果を確認
++      </message>
+       <message name="IDS_MENU_HISTORY" desc="Menu item for opening the history page. [CHAR-LIMIT=27]">
+         History
+       </message>
 diff --git a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
-index afb6489..e8d2674 100644
+index c4ab1e9..2cbf68f 100644
 --- a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
 +++ b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
-@@ -65,6 +65,7 @@
+@@ -68,6 +68,7 @@
  #include "chrome/browser/ui/webui/usb_internals/usb_internals_ui.h"
  #include "chrome/browser/ui/webui/user_actions/user_actions_ui.h"
  #include "chrome/browser/ui/webui/version_ui.h"
@@ -140,7 +140,7 @@ index afb6489..e8d2674 100644
  #include "chrome/common/buildflags.h"
  #include "chrome/common/chrome_features.h"
  #include "chrome/common/pref_names.h"
-@@ -447,6 +448,8 @@ WebUIFactoryFunction GetWebUIFactoryFunction(WebUI* web_ui,
+@@ -443,6 +444,8 @@ WebUIFactoryFunction GetWebUIFactoryFunction(WebUI* web_ui,
      return &NewWebUI<UserActionsUI>;
    if (url.host_piece() == chrome::kChromeUIVersionHost)
      return &NewWebUI<VersionUI>;
@@ -148,8 +148,8 @@ index afb6489..e8d2674 100644
 +    return &NewWebUI<SodiumResult>;
  
  #if !defined(OS_ANDROID)
-   if (AppManagementUI::IsEnabled() &&
-@@ -865,6 +868,7 @@ bool ChromeWebUIControllerFactory::IsWebUIAllowedToMakeNetworkRequests(
+ #if !defined(OS_CHROMEOS)
+@@ -880,6 +883,7 @@ bool ChromeWebUIControllerFactory::IsWebUIAllowedToMakeNetworkRequests(
    // If you are adding a new host to this list, please file a corresponding bug
    // to track its removal. See https://crbug.com/829412 for the metabug.
    return
@@ -227,10 +227,10 @@ index 0000000..47ddfc0
 +
 +#endif  // CHROME_BROWSER_UI_WEBUI_SODIUM_RESULT_H_
 diff --git a/chrome/common/webui_url_constants.cc b/chrome/common/webui_url_constants.cc
-index 8594a6a..1bc6046 100644
+index 20917e7..bc64949 100644
 --- a/chrome/common/webui_url_constants.cc
 +++ b/chrome/common/webui_url_constants.cc
-@@ -17,6 +17,8 @@ namespace chrome {
+@@ -21,6 +21,8 @@ namespace chrome {
  // Note: Add hosts to |kChromeHostURLs| at the bottom of this file to be listed
  // by chrome://chrome-urls (about:about) and the built-in AutocompleteProvider.
  
@@ -240,7 +240,7 @@ index 8594a6a..1bc6046 100644
  const char kChromeUIAboutURL[] = "chrome://about/";
  const char kChromeUIAccessibilityHost[] = "accessibility";
 diff --git a/chrome/common/webui_url_constants.h b/chrome/common/webui_url_constants.h
-index f550bc6..f7184d4 100644
+index 8acae2f..47c2ff0 100644
 --- a/chrome/common/webui_url_constants.h
 +++ b/chrome/common/webui_url_constants.h
 @@ -25,6 +25,8 @@ namespace chrome {
