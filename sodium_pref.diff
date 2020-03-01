@@ -133,10 +133,18 @@ index 1d938c6..39b0508 100644
      prefs::kOfferTranslateEnabled,
      prefs::kNotificationsVibrateEnabled,
 diff --git a/chrome/browser/renderer_preferences_util.cc b/chrome/browser/renderer_preferences_util.cc
-index f7ce4ce..fd94bbd 100644
+index f7ce4ce..e6420df 100644
 --- a/chrome/browser/renderer_preferences_util.cc
 +++ b/chrome/browser/renderer_preferences_util.cc
-@@ -101,6 +101,7 @@ void UpdateFromSystemSettings(blink::mojom::RendererPreferences* prefs,
+@@ -13,6 +13,7 @@
+ #include "chrome/browser/browser_process.h"
+ #include "chrome/browser/profiles/profile.h"
+ #include "chrome/common/pref_names.h"
++#include "components/content_settings/core/common/pref_names.h"
+ #include "components/language/core/browser/pref_names.h"
+ #include "components/prefs/pref_service.h"
+ #include "content/public/browser/renderer_preferences_util.h"
+@@ -101,6 +102,7 @@ void UpdateFromSystemSettings(blink::mojom::RendererPreferences* prefs,
        pref_service->GetBoolean(prefs::kEnableDoNotTrack);
    prefs->enable_encrypted_media =
        pref_service->GetBoolean(prefs::kEnableEncryptedMedia);
@@ -145,10 +153,18 @@ index f7ce4ce..fd94bbd 100644
    // Handling the backward compatibility of previous boolean verions of policy
    // controls.
 diff --git a/chrome/browser/ui/browser_ui_prefs.cc b/chrome/browser/ui/browser_ui_prefs.cc
-index a8070d7..a64a16c 100644
+index a8070d7..279165b 100644
 --- a/chrome/browser/ui/browser_ui_prefs.cc
 +++ b/chrome/browser/ui/browser_ui_prefs.cc
-@@ -78,6 +78,7 @@ void RegisterBrowserUserPrefs(user_prefs::PrefRegistrySyncable* registry) {
+@@ -13,6 +13,7 @@
+ #include "chrome/browser/upgrade_detector/upgrade_detector.h"
+ #include "chrome/common/buildflags.h"
+ #include "chrome/common/pref_names.h"
++#include "components/content_settings/core/common/pref_names.h"
+ #include "components/pref_registry/pref_registry_syncable.h"
+ #include "components/prefs/pref_registry_simple.h"
+ #include "components/prefs/pref_service.h"
+@@ -78,6 +79,7 @@ void RegisterBrowserUserPrefs(user_prefs::PrefRegistrySyncable* registry) {
    registry->RegisterBooleanPref(
        prefs::kEnableDoNotTrack, false,
        user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
@@ -157,10 +173,18 @@ index a8070d7..a64a16c 100644
    registry->RegisterBooleanPref(prefs::kPrintPreviewUseSystemDefaultPrinter,
                                  false);
 diff --git a/chrome/browser/ui/prefs/pref_watcher.cc b/chrome/browser/ui/prefs/pref_watcher.cc
-index 56bd852..6c6680e 100644
+index 56bd852..e6c8cdb 100644
 --- a/chrome/browser/ui/prefs/pref_watcher.cc
 +++ b/chrome/browser/ui/prefs/pref_watcher.cc
-@@ -74,6 +74,8 @@ PrefWatcher::PrefWatcher(Profile* profile) : profile_(profile) {
+@@ -14,6 +14,7 @@
+ #include "chrome/browser/ui/prefs/prefs_tab_helper.h"
+ #include "chrome/common/pref_names.h"
+ #include "components/keyed_service/content/browser_context_dependency_manager.h"
++#include "components/content_settings/core/common/pref_names.h"
+ #include "components/language/core/browser/pref_names.h"
+ #include "third_party/blink/public/mojom/renderer_preferences.mojom.h"
+ 
+@@ -74,6 +75,8 @@ PrefWatcher::PrefWatcher(Profile* profile) : profile_(profile) {
                                       renderer_callback);
    profile_pref_change_registrar_.Add(prefs::kEnableEncryptedMedia,
                                       renderer_callback);
@@ -169,31 +193,32 @@ index 56bd852..6c6680e 100644
    profile_pref_change_registrar_.Add(prefs::kWebRTCMultipleRoutesEnabled,
                                       renderer_callback);
    profile_pref_change_registrar_.Add(prefs::kWebRTCNonProxiedUdpEnabled,
-diff --git a/chrome/common/pref_names.cc b/chrome/common/pref_names.cc
-index 78d405c..ccb3208 100644
---- a/chrome/common/pref_names.cc
-+++ b/chrome/common/pref_names.cc
-@@ -1239,6 +1239,8 @@ const char kEnableDoNotTrack[] = "enable_do_not_track";
- // non-webkit-prefixed string.
- const char kEnableEncryptedMedia[] = "webkit.webprefs.encrypted_media_enabled";
+diff --git a/components/content_settings/core/common/pref_names.cc b/components/content_settings/core/common/pref_names.cc
+index 59280df..f8f23bd 100644
+--- a/components/content_settings/core/common/pref_names.cc
++++ b/components/content_settings/core/common/pref_names.cc
+@@ -6,6 +6,8 @@
+ 
+ namespace prefs {
  
 +const char kEnableSodium[] = "enable_sodium";
 +
- // Boolean that specifies whether to import the form data for autofill from the
- // default browser on first run.
- const char kImportAutofillFormData[] = "import_autofill_form_data";
-diff --git a/chrome/common/pref_names.h b/chrome/common/pref_names.h
-index 2e45e06..f73ac1d 100644
---- a/chrome/common/pref_names.h
-+++ b/chrome/common/pref_names.h
-@@ -384,6 +384,7 @@ extern const char kEnableHyperlinkAuditing[];
- extern const char kEnableReferrers[];
- extern const char kEnableDoNotTrack[];
- extern const char kEnableEncryptedMedia[];
-+extern const char kEnableSodium[];
+ // Boolean that is true if we should unconditionally block third-party cookies,
+ // regardless of other content settings.
+ const char kBlockThirdPartyCookies[] = "profile.block_third_party_cookies";
+diff --git a/components/content_settings/core/common/pref_names.h b/components/content_settings/core/common/pref_names.h
+index a4c4bff..29b548f 100644
+--- a/components/content_settings/core/common/pref_names.h
++++ b/components/content_settings/core/common/pref_names.h
+@@ -13,6 +13,8 @@ namespace prefs {
+ // some of these are generated by WebsiteSettingsInfo from content settings
+ // names.
  
- extern const char kImportAutofillFormData[];
- extern const char kImportBookmarks[];
++extern const char kEnableSodium[];
++
+ // TODO(crbug.com/967668): Remove direct access to these preferences and
+ // replace with CookieSettings::ShouldBlockThirdPartyCookies().
+ extern const char kBlockThirdPartyCookies[];
 diff --git a/content/browser/frame_host/navigation_controller_android.cc b/content/browser/frame_host/navigation_controller_android.cc
 index 5bd698f..d46e8fb 100644
 --- a/content/browser/frame_host/navigation_controller_android.cc
