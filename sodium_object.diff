@@ -416,11 +416,15 @@ index 0000000..6639f0a
 +]
 diff --git a/third_party/blink/renderer/modules/sodium/sodium.cc b/third_party/blink/renderer/modules/sodium/sodium.cc
 new file mode 100644
-index 0000000..13d0105
+index 0000000..798ddbc
 --- /dev/null
 +++ b/third_party/blink/renderer/modules/sodium/sodium.cc
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,41 @@
 +#include "third_party/blink/renderer/modules/sodium/sodium.h"
++
++#include "third_party/blink/renderer/core/dom/document.h"
++#include "third_party/blink/renderer/core/frame/local_frame.h"
++#include "third_party/blink/renderer/core/loader/document_loader.h"
 +
 +namespace blink {
 +
@@ -438,6 +442,17 @@ index 0000000..13d0105
 +  return user_agent_;
 +}
 +
++String Sodium::locationIp() {
++  LocalFrame* frame = GetFrame();
++  if (!frame) return "";
++  Document* document = frame->GetDocument();
++  if (!document) return "";
++  DocumentLoader* loader = document->Loader();
++  if (!loader) return "";
++
++  return loader->GetResponse().RemoteIPAddress();
++}
++
 +SodiumStorage* Sodium::storage() {
 +  LocalFrame* frame = GetFrame();
 +  if (!sodium_storage_ && frame)
@@ -448,10 +463,10 @@ index 0000000..13d0105
 +}  // namespace blink
 diff --git a/third_party/blink/renderer/modules/sodium/sodium.h b/third_party/blink/renderer/modules/sodium/sodium.h
 new file mode 100644
-index 0000000..5df6f9d
+index 0000000..73d1273
 --- /dev/null
 +++ b/third_party/blink/renderer/modules/sodium/sodium.h
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,32 @@
 +#ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_SODIUM_SODIUM_H_
 +#define THIRD_PARTY_BLINK_RENDERER_MODULES_SODIUM_SODIUM_H_
 +
@@ -473,6 +488,7 @@ index 0000000..5df6f9d
 +  void Trace(blink::Visitor*) override;
 +
 +  String userAgent();
++  String locationIp();
 +  SodiumStorage* storage();
 +
 + private:
@@ -485,12 +501,13 @@ index 0000000..5df6f9d
 +#endif  // THIRD_PARTY_BLINK_RENDERER_MODULES_SODIUM_SODIUM_H_
 diff --git a/third_party/blink/renderer/modules/sodium/sodium.idl b/third_party/blink/renderer/modules/sodium/sodium.idl
 new file mode 100644
-index 0000000..b833f2a
+index 0000000..937328b
 --- /dev/null
 +++ b/third_party/blink/renderer/modules/sodium/sodium.idl
-@@ -0,0 +1,4 @@
+@@ -0,0 +1,5 @@
 +interface Sodium {
 +    readonly attribute DOMString userAgent;
++    readonly attribute DOMString locationIp;
 +    readonly attribute SodiumStorage storage;
 +};
 diff --git a/third_party/blink/renderer/modules/sodium/sodium_storage.cc b/third_party/blink/renderer/modules/sodium/sodium_storage.cc

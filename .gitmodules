@@ -4,3 +4,6 @@
 [submodule "videomark-log-view"]
 	path = videomark-log-view
 	url = git@github.com:videomark/videomark-log-view.git
+[submodule "videomark-extension"]
+	path = videomark-extension
+	url = git@github.com:videomark/videomark-extension.git
