@@ -117,10 +117,10 @@ index 0000000..ae72e95
 +
 +</PreferenceScreen>
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
-index 40f1b34..28eb5d1 100644
+index 8201302..5552066 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
-@@ -2094,6 +2094,10 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
+@@ -2097,6 +2097,10 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
              currentTab.getWebContents().getNavigationController().setUseDesktopUserAgent(
                      !usingDesktopUserAgent, reloadOnChange);
              RecordUserAction.record("MobileMenuRequestDesktopSite");
@@ -269,7 +269,7 @@ index 0000000..1fe9c46
 +    }
 +}
 diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
-index 2656c49..93d3f77 100644
+index 7284bd0..a86b6cc 100644
 --- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
 +++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
 @@ -644,6 +644,23 @@ CHAR-LIMIT guidelines:
@@ -284,7 +284,7 @@ index 2656c49..93d3f77 100644
 +        「動画再生品質の記録」をオンにすると、YouTube、Paravi、TVer で動画を再生する際にその体感品質値の推定に必要な視聴データ (動画の解像度やビットレート、再生の一時停止など) を収集し、動画再生中や再生終了後にその推定品質値を確認できるようになります。
 +      </message>
 +      <message name="IDS_SODIUM_SETTINGS_LINK" desc="Link for chrome://videomark/#/settings">
-+        詳細の設定については、&lt;link&gt;Videomark の設定&lt;/link&gt;をご覧ください
++        詳細の設定については &lt;link&gt;VideoMark の設定&lt;/link&gt; をご覧ください
 +      </message>
 +      <message name="IDS_SODIUM_ON" desc="Accessibility description for when enable sodium.">
 +        動画再生品質の記録をオフにします

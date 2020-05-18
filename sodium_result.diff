@@ -1,58 +1,60 @@
 diff --git a/chrome/android/java/res/menu/main_menu.xml b/chrome/android/java/res/menu/main_menu.xml
-index f2c7c73..792fcbe 100644
+index f2c7c73..ebd35fe 100644
 --- a/chrome/android/java/res/menu/main_menu.xml
 +++ b/chrome/android/java/res/menu/main_menu.xml
-@@ -45,6 +45,8 @@
+@@ -45,6 +45,10 @@
              android:title="@string/menu_bookmarks" />
          <item android:id="@+id/recent_tabs_menu_id"
              android:title="@string/menu_recent_tabs" />
 +        <item android:id="@+id/sodium_result_id"
 +            android:title="@string/menu_sodium_result" />
++        <item android:id="@+id/sodium_settings_id"
++            android:title="@string/menu_sodium_settings" />
          <item android:id="@+id/open_history_menu_id"
              android:title="@string/menu_history" />
          <item android:id="@+id/downloads_menu_id"
-@@ -102,6 +104,8 @@
+@@ -102,6 +106,10 @@
              android:title="@string/menu_close_all_incognito_tabs" />
          <item android:id="@+id/menu_group_tabs"
              android:title="@string/menu_group_tabs" />
-+        <item android:id="@+id/overview_sodium_result_id"
++        <item android:id="@+id/sodium_result_id"
 +            android:title="@string/menu_sodium_result" />
++        <item android:id="@+id/sodium_settings_id"
++            android:title="@string/menu_sodium_settings" />
          <item android:id="@id/preferences_id"
              android:title="@string/menu_settings" />
      </group>
+@@ -117,6 +125,10 @@
+             android:title="@string/menu_bookmarks" />
+         <item android:id="@+id/recent_tabs_menu_id"
+             android:title="@string/menu_recent_tabs" />
++        <item android:id="@+id/sodium_result_id"
++            android:title="@string/menu_sodium_result" />
++        <item android:id="@+id/sodium_settings_id"
++            android:title="@string/menu_sodium_settings" />
+         <item android:id="@+id/open_history_menu_id"
+             android:title="@string/menu_history" />
+         <item android:id="@+id/downloads_menu_id"
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
-index 40f1b34..7e7674b 100644
+index 8201302..1619c88 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
-@@ -2057,6 +2057,18 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
+@@ -188,6 +188,7 @@ import org.chromium.webapk.lib.client.WebApkNavigationClient;
+ import org.chromium.webapk.lib.client.WebApkValidator;
+ 
+ import java.util.ArrayList;
++import java.util.Arrays;
+ import java.util.HashSet;
+ import java.util.List;
+ import java.util.Set;
+@@ -2060,6 +2061,34 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
                      PageInfoController.OpenedFromSource.MENU,
                      /*offlinePageLoadUrlDelegate=*/
                      new OfflinePageUtils.TabOfflinePageLoadUrlDelegate(currentTab));
-+        } else if (id == R.id.sodium_result_id) {
-+            String url = "chrome://videomark/";
-+            if (NewTabPage.isNTPUrl(currentTab.getUrl())) {
-+                currentTab.loadUrl(new LoadUrlParams(url));
-+            } else if (currentTab.getUrl().startsWith(url)) {
-+                currentTab.reload();
-+            } else {
-+                TabCreator tabCreator = getTabCreator(currentTab.isIncognito());
-+                if (tabCreator == null) return false;
++        } else if (id == R.id.sodium_result_id || id == R.id.sodium_settings_id) {
++            String url = (id == R.id.sodium_result_id) ? "chrome://videomark/" : "chrome://videomark/#/settings";
++            List<String> reloadTargets = (id == R.id.sodium_result_id) ? Arrays.asList("chrome://videomark/", "chrome://videomark/#/", "chrome://videomark/#/history") : Arrays.asList("chrome://videomark/#/settings");
 +
-+                tabCreator.createNewTab(new LoadUrlParams(url, PageTransition.LINK), TabLaunchType.FROM_LINK, getActivityTab());
-+            }
-         } else if (id == R.id.translate_id) {
-             RecordUserAction.record("MobileMenuTranslate");
-             Tracker tracker =
-diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
-index b84b61a..916cf44 100644
---- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
-+++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
-@@ -1747,6 +1747,32 @@ public class ChromeTabbedActivity extends ChromeActivity {
-             getTabModelSelector().getModel(true).closeAllTabs();
-             // TODO(nileshagrawal) Record unique action for this. See bug http://b/5542946.
-             RecordUserAction.record("MobileMenuCloseAllTabs");
-+        } else if (id == R.id.overview_sodium_result_id) {
-+            String url = "chrome://videomark/";
 +            TabModel model = getTabModelSelector().getCurrentModel();
 +            Tab ntpTab = null;
 +            Tab videomarkTab = null;
@@ -61,7 +63,54 @@ index b84b61a..916cf44 100644
 +            for (int i = 0; i < count; i++) {
 +                Tab tab = model.getTabAt(i);
 +                if (ntpTab == null && NewTabPage.isNTPUrl(tab.getUrl())) ntpTab = tab;
-+                if (videomarkTab == null && tab.getUrl().startsWith(url)) videomarkTab = tab;
++                if (videomarkTab == null && reloadTargets.contains(tab.getUrl())) videomarkTab = tab;
++            }
++
++            if (videomarkTab != null) {
++                videomarkTab.reload();
++                // force forcus
++                model.setIndex(TabModelUtils.getTabIndexById(model, videomarkTab.getId()), TabSelectionType.FROM_USER);
++            } else if (ntpTab != null) {
++                ntpTab.loadUrl(new LoadUrlParams(url));
++                // force forcus
++                model.setIndex(TabModelUtils.getTabIndexById(model, ntpTab.getId()), TabSelectionType.FROM_USER);
++            } else {
++                TabCreator tabCreator = getTabCreator(model.isIncognito());
++                if (tabCreator == null) return false;
++                tabCreator.createNewTab(new LoadUrlParams(url, PageTransition.LINK), TabLaunchType.FROM_LINK, getActivityTab());
++            }
+         } else if (id == R.id.translate_id) {
+             RecordUserAction.record("MobileMenuTranslate");
+             Tracker tracker =
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
+index 73c0640..495b11d 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
+@@ -162,6 +162,7 @@ import org.chromium.ui.base.PageTransition;
+ import org.chromium.ui.modaldialog.ModalDialogManager;
+ import org.chromium.ui.widget.Toast;
+ 
++import java.util.Arrays;
+ import java.util.List;
+ import java.util.Locale;
+ 
+@@ -1747,6 +1748,34 @@ public class ChromeTabbedActivity extends ChromeActivity {
+             getTabModelSelector().getModel(true).closeAllTabs();
+             // TODO(nileshagrawal) Record unique action for this. See bug http://b/5542946.
+             RecordUserAction.record("MobileMenuCloseAllTabs");
++        } else if (id == R.id.sodium_result_id || id == R.id.sodium_settings_id) {
++            String url = (id == R.id.sodium_result_id) ? "chrome://videomark/" : "chrome://videomark/#/settings";
++            List<String> reloadTargets = (id == R.id.sodium_result_id) ? Arrays.asList("chrome://videomark/", "chrome://videomark/#/", "chrome://videomark/#/history") : Arrays.asList("chrome://videomark/#/settings");
++
++            TabModel model = getTabModelSelector().getCurrentModel();
++            Tab ntpTab = null;
++            Tab videomarkTab = null;
++
++            int count = model.getCount();
++            for (int i = 0; i < count; i++) {
++                Tab tab = model.getTabAt(i);
++                if (ntpTab == null && NewTabPage.isNTPUrl(tab.getUrl())) ntpTab = tab;
++                if (videomarkTab == null && reloadTargets.contains(tab.getUrl())) videomarkTab = tab;
 +            }
 +
 +            if (videomarkTab != null) {
@@ -115,15 +164,18 @@ index efacc93..a942678 100644
  
    if (is_win || is_mac) {
 diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
-index 2656c49..0381561c 100644
+index 7284bd0..137a58a 100644
 --- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
 +++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
-@@ -2827,6 +2827,9 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
+@@ -2827,6 +2827,12 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
        <message name="IDS_MENU_RECENT_TABS" desc="Menu item for opening the 'Recent tabs' page that shows recently closed tabs and pages the user has opened on his/her other devices. [CHAR-LIMIT=27]">
          Recent tabs
        </message>
 +      <message name="IDS_MENU_SODIUM_RESULT" desc="Menu item for Sodium result">
-+        動画の視聴結果を確認
++        動画の計測結果を確認
++      </message>
++      <message name="IDS_MENU_SODIUM_SETTINGS" desc="Menu item for Sodium settings">
++        VideoMark の設定
 +      </message>
        <message name="IDS_MENU_HISTORY" desc="Menu item for opening the history page. [CHAR-LIMIT=27]">
          History
