@@ -1,9 +1,3 @@
-[submodule "sodium.js"]
-	path = sodium.js
-	url = git@github.com:videomark/sodium.js.git
-[submodule "videomark-log-view"]
-	path = videomark-log-view
-	url = git@github.com:videomark/videomark-log-view.git
-[submodule "videomark-extension"]
-	path = videomark-extension
-	url = git@github.com:videomark/videomark-extension.git
+[submodule "videomark"]
+	path = videomark
+	url = git@github.com:videomark/videomark.git

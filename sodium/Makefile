@@ -8,20 +8,22 @@ clean:
 	mkdir -p $(RESDIR)
 
 sodium.js:
-	cd ../sodium.js && npm run build
-	cp ../sodium.js/dist/sodium.js $(RESDIR)
-	cp ../videomark-extension/content_script.js $(RESDIR)
+	cd ../videomark/packages/sodium && npm run build
+	cp ../videomark/packages/sodium/dist/sodium.js $(RESDIR)
+	cp ../videomark/packages/videomark-extension/content_script.js $(RESDIR)
 
 videomark-log-view:
-	cd ../videomark-log-view && npm run build-android
-	cp -r ../videomark-log-view/build $(RESDIR)/sodium_result
+	cd ../videomark/packages/videomark-mini-stats && npm run build
+	cd ../videomark/packages/videomark-log-view && npm run build-android
+	cp -r ../videomark/packages/videomark-log-view/build $(RESDIR)/sodium_result
 
 install:
 	rm -rf $(SRCDIR)/sodium*
 	cp -r  $(RESDIR)/* $(SRCDIR)
 
 npm-install:
-	npm ci --prefix ../sodium.js
-	npm ci --prefix ../videomark-log-view
+	npm install --no-save --prefix ../videomark/packages/sodium
+	npm install --no-save --prefix ../videomark/packages/videomark-log-view
+	npm install --no-save --prefix ../videomark/packages/videomark-mini-stats
 
 .PHONY: all clean sodium.js videomark-log-view install npm-install
