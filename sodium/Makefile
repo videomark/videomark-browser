@@ -1,29 +1,15 @@
-RESDIR=chrome/browser/resources
-SRCDIR=../../../chromium/src/$(RESDIR)
+SRCDIR=../../../chromium/src
 
-all: clean sodium.js videomark-log-view install
+all: build install
 
-clean:
-	rm   -rf $(RESDIR)
-	mkdir -p $(RESDIR)
-
-sodium.js:
-	cd ../videomark/packages/sodium && npm run build
-	cp ../videomark/packages/sodium/dist/sodium.js $(RESDIR)
-	cp ../videomark/packages/videomark-extension/content_script.js $(RESDIR)
-
-videomark-log-view:
-	cd ../videomark/packages/videomark-mini-stats && npm run build
-	cd ../videomark/packages/videomark-log-view && npm run build-android
-	cp -r ../videomark/packages/videomark-log-view/build $(RESDIR)/sodium_result
+build:
+	cd ../videomark && ./bin/build-android
 
 install:
-	rm -rf $(SRCDIR)/sodium*
-	cp -r  $(RESDIR)/* $(SRCDIR)
+	rm -rf $(SRCDIR)/sodium* $(SRCDIR)/content_script.js
+	cd $(SRCDIR) && cp -r $(CURDIR)/../videomark/dist/android/* .
 
-npm-install:
-	npm install --no-save --prefix ../videomark/packages/sodium
-	npm install --no-save --prefix ../videomark/packages/videomark-log-view
-	npm install --no-save --prefix ../videomark/packages/videomark-mini-stats
+yarn-install:
+	cd ../videomark && yarn install
 
-.PHONY: all clean sodium.js videomark-log-view install npm-install
+.PHONY: all build install yarn-install
