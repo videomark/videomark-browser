@@ -36,7 +36,7 @@ index f2c7c73..ebd35fe 100644
              android:title="@string/menu_history" />
          <item android:id="@+id/downloads_menu_id"
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
-index 8201302..1619c88 100644
+index 8201302..26a985e 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
 @@ -188,6 +188,7 @@ import org.chromium.webapk.lib.client.WebApkNavigationClient;
@@ -47,85 +47,63 @@ index 8201302..1619c88 100644
  import java.util.HashSet;
  import java.util.List;
  import java.util.Set;
-@@ -2060,6 +2061,34 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
+@@ -2060,6 +2061,8 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
                      PageInfoController.OpenedFromSource.MENU,
                      /*offlinePageLoadUrlDelegate=*/
                      new OfflinePageUtils.TabOfflinePageLoadUrlDelegate(currentTab));
 +        } else if (id == R.id.sodium_result_id || id == R.id.sodium_settings_id) {
-+            String url = (id == R.id.sodium_result_id) ? "chrome://videomark/" : "chrome://videomark/#/settings";
-+            List<String> reloadTargets = (id == R.id.sodium_result_id) ? Arrays.asList("chrome://videomark/", "chrome://videomark/#/", "chrome://videomark/#/history") : Arrays.asList("chrome://videomark/#/settings");
-+
-+            TabModel model = getTabModelSelector().getCurrentModel();
-+            Tab ntpTab = null;
-+            Tab videomarkTab = null;
-+
-+            int count = model.getCount();
-+            for (int i = 0; i < count; i++) {
-+                Tab tab = model.getTabAt(i);
-+                if (ntpTab == null && NewTabPage.isNTPUrl(tab.getUrl())) ntpTab = tab;
-+                if (videomarkTab == null && reloadTargets.contains(tab.getUrl())) videomarkTab = tab;
-+            }
-+
-+            if (videomarkTab != null) {
-+                videomarkTab.reload();
-+                // force forcus
-+                model.setIndex(TabModelUtils.getTabIndexById(model, videomarkTab.getId()), TabSelectionType.FROM_USER);
-+            } else if (ntpTab != null) {
-+                ntpTab.loadUrl(new LoadUrlParams(url));
-+                // force forcus
-+                model.setIndex(TabModelUtils.getTabIndexById(model, ntpTab.getId()), TabSelectionType.FROM_USER);
-+            } else {
-+                TabCreator tabCreator = getTabCreator(model.isIncognito());
-+                if (tabCreator == null) return false;
-+                tabCreator.createNewTab(new LoadUrlParams(url, PageTransition.LINK), TabLaunchType.FROM_LINK, getActivityTab());
-+            }
++            return focusVideomarkTab(id);
          } else if (id == R.id.translate_id) {
              RecordUserAction.record("MobileMenuTranslate");
              Tracker tracker =
+@@ -2105,6 +2108,37 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
+         return true;
+     }
+ 
++    public boolean focusVideomarkTab(int id) {
++        String url = (id == R.id.sodium_result_id) ? "chrome://videomark/" : "chrome://videomark/#/settings";
++        List<String> reloadTargets = (id == R.id.sodium_result_id) ? Arrays.asList("chrome://videomark/", "chrome://videomark/#/", "chrome://videomark/#/history") : Arrays.asList("chrome://videomark/#/settings");
++
++        TabModel model = getTabModelSelector().getCurrentModel();
++        Tab ntpTab = null;
++        Tab videomarkTab = null;
++
++        int count = model.getCount();
++        for (int i = 0; i < count; i++) {
++            Tab tab = model.getTabAt(i);
++            if (ntpTab == null && NewTabPage.isNTPUrl(tab.getUrl())) ntpTab = tab;
++            if (videomarkTab == null && reloadTargets.contains(tab.getUrl())) videomarkTab = tab;
++        }
++
++        if (videomarkTab != null) {
++            videomarkTab.reload();
++            // force forcus
++            model.setIndex(TabModelUtils.getTabIndexById(model, videomarkTab.getId()), TabSelectionType.FROM_USER);
++        } else if (ntpTab != null) {
++            ntpTab.loadUrl(new LoadUrlParams(url));
++            // force forcus
++            model.setIndex(TabModelUtils.getTabIndexById(model, ntpTab.getId()), TabSelectionType.FROM_USER);
++        } else {
++            TabCreator tabCreator = getTabCreator(model.isIncognito());
++            if (tabCreator == null) return false;
++            tabCreator.createNewTab(new LoadUrlParams(url, PageTransition.LINK), TabLaunchType.FROM_LINK, getActivityTab());
++        }
++        return true;
++    }
++
+     /**
+      * Shows HelpAndFeedback and records the user action as well.
+      * @param url The URL of the tab the user is currently on.
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
-index 73c0640..495b11d 100644
+index 73c0640..c88543e 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
-@@ -162,6 +162,7 @@ import org.chromium.ui.base.PageTransition;
- import org.chromium.ui.modaldialog.ModalDialogManager;
- import org.chromium.ui.widget.Toast;
- 
-+import java.util.Arrays;
- import java.util.List;
- import java.util.Locale;
- 
-@@ -1747,6 +1748,34 @@ public class ChromeTabbedActivity extends ChromeActivity {
+@@ -1747,6 +1747,8 @@ public class ChromeTabbedActivity extends ChromeActivity {
              getTabModelSelector().getModel(true).closeAllTabs();
              // TODO(nileshagrawal) Record unique action for this. See bug http://b/5542946.
              RecordUserAction.record("MobileMenuCloseAllTabs");
 +        } else if (id == R.id.sodium_result_id || id == R.id.sodium_settings_id) {
-+            String url = (id == R.id.sodium_result_id) ? "chrome://videomark/" : "chrome://videomark/#/settings";
-+            List<String> reloadTargets = (id == R.id.sodium_result_id) ? Arrays.asList("chrome://videomark/", "chrome://videomark/#/", "chrome://videomark/#/history") : Arrays.asList("chrome://videomark/#/settings");
-+
-+            TabModel model = getTabModelSelector().getCurrentModel();
-+            Tab ntpTab = null;
-+            Tab videomarkTab = null;
-+
-+            int count = model.getCount();
-+            for (int i = 0; i < count; i++) {
-+                Tab tab = model.getTabAt(i);
-+                if (ntpTab == null && NewTabPage.isNTPUrl(tab.getUrl())) ntpTab = tab;
-+                if (videomarkTab == null && reloadTargets.contains(tab.getUrl())) videomarkTab = tab;
-+            }
-+
-+            if (videomarkTab != null) {
-+                videomarkTab.reload();
-+                // force forcus
-+                model.setIndex(TabModelUtils.getTabIndexById(model, videomarkTab.getId()), TabSelectionType.FROM_USER);
-+            } else if (ntpTab != null) {
-+                ntpTab.loadUrl(new LoadUrlParams(url));
-+                // force forcus
-+                model.setIndex(TabModelUtils.getTabIndexById(model, ntpTab.getId()), TabSelectionType.FROM_USER);
-+            } else {
-+                TabCreator tabCreator = getTabCreator(model.isIncognito());
-+                if (tabCreator == null) return false;
-+                tabCreator.createNewTab(new LoadUrlParams(url, PageTransition.LINK), TabLaunchType.FROM_LINK, getActivityTab());
-+            }
++            return focusVideomarkTab(id);
          } else if (id == R.id.focus_url_bar) {
              boolean isUrlBarVisible = !mOverviewModeController.overviewVisible()
                      && (!isTablet() || getCurrentTabModel().getCount() != 0);

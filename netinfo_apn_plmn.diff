@@ -1,68 +1,68 @@
 diff --git a/content/browser/BUILD.gn b/content/browser/BUILD.gn
-index 75fc9d9..d0abd98 100644
+index 75fc9d9..09d4b49 100644
 --- a/content/browser/BUILD.gn
 +++ b/content/browser/BUILD.gn
 @@ -2367,6 +2367,8 @@ jumbo_source_set("browser") {
        "frame_host/render_frame_host_android.h",
        "media/capture/screen_capture_device_android.cc",
        "media/capture/screen_capture_device_android.h",
-+      "network_information_impl.cc",
-+      "network_information_impl.h",
++      "network_information_host.cc",
++      "network_information_host.h",
        "renderer_host/compositor_dependencies_android.cc",
        "renderer_host/compositor_dependencies_android.h",
        "renderer_host/compositor_impl_android.cc",
-diff --git a/content/browser/network_information_impl.cc b/content/browser/network_information_impl.cc
+diff --git a/content/browser/network_information_host.cc b/content/browser/network_information_host.cc
 new file mode 100644
-index 0000000..dae57c3
+index 0000000..60c3b56
 --- /dev/null
-+++ b/content/browser/network_information_impl.cc
++++ b/content/browser/network_information_host.cc
 @@ -0,0 +1,29 @@
-+#include "content/browser/network_information_impl.h"
++#include "content/browser/network_information_host.h"
 +#include "net/android/network_library.h"
 +
 +#include "mojo/public/cpp/bindings/strong_binding.h"
 +
 +namespace content {
 +
-+NetworkInformationImpl::NetworkInformationImpl() = default;
++NetworkInformationHost::NetworkInformationHost() = default;
 +
-+NetworkInformationImpl::~NetworkInformationImpl() = default;
++NetworkInformationHost::~NetworkInformationHost() = default;
 +
 +// static
-+void NetworkInformationImpl::Create(blink::mojom::NetworkInformationRequest request) {
-+  mojo::MakeStrongBinding(std::make_unique<NetworkInformationImpl>(), std::move(request));
++void NetworkInformationHost::Create(blink::mojom::NetworkInformationRequest request) {
++  mojo::MakeStrongBinding(std::make_unique<NetworkInformationHost>(), std::move(request));
 +}
 +
-+void NetworkInformationImpl::GetExtraInfo(GetExtraInfoCallback callback) {
++void NetworkInformationHost::GetExtraInfo(GetExtraInfoCallback callback) {
 +  std::move(callback).Run(net::android::GetExtraInfo());
 +}
 +
-+void NetworkInformationImpl::GetNetworkOperatorName(GetNetworkOperatorNameCallback callback) {
++void NetworkInformationHost::GetNetworkOperatorName(GetNetworkOperatorNameCallback callback) {
 +  std::move(callback).Run(net::android::GetTelephonyNetworkOperatorName());
 +}
 +
-+void NetworkInformationImpl::GetSimOperatorName(GetSimOperatorNameCallback callback) {
++void NetworkInformationHost::GetSimOperatorName(GetSimOperatorNameCallback callback) {
 +  std::move(callback).Run(net::android::GetTelephonySimOperatorName());
 +}
 +
 +}  // namespace content
-diff --git a/content/browser/network_information_impl.h b/content/browser/network_information_impl.h
+diff --git a/content/browser/network_information_host.h b/content/browser/network_information_host.h
 new file mode 100644
-index 0000000..3c8309b
+index 0000000..87cd0b7
 --- /dev/null
-+++ b/content/browser/network_information_impl.h
++++ b/content/browser/network_information_host.h
 @@ -0,0 +1,25 @@
-+#ifndef CONTENT_BROWSER_NETWORK_INFORMATION_IMPL_H_
-+#define CONTENT_BROWSER_NETWORK_INFORMATION_IMPL_H_
++#ifndef CONTENT_BROWSER_NETWORK_INFORMATION_HOST_H_
++#define CONTENT_BROWSER_NETWORK_INFORMATION_HOST_H_
 +
 +#include "third_party/blink/public/mojom/netinfo/network_information.mojom.h"
 +
 +namespace content {
 +
-+class NetworkInformationImpl : public blink::mojom::NetworkInformation {
++class NetworkInformationHost : public blink::mojom::NetworkInformation {
 + public:
-+  NetworkInformationImpl();
-+  ~NetworkInformationImpl() override;
++  NetworkInformationHost();
++  ~NetworkInformationHost() override;
 +
 +  static void Create(blink::mojom::NetworkInformationRequest request);
 +
@@ -71,21 +71,21 @@ index 0000000..3c8309b
 +  void GetNetworkOperatorName(GetNetworkOperatorNameCallback callback) override;
 +  void GetSimOperatorName(GetSimOperatorNameCallback callback) override;
 +
-+  DISALLOW_COPY_AND_ASSIGN(NetworkInformationImpl);
++  DISALLOW_COPY_AND_ASSIGN(NetworkInformationHost);
 +};
 +
 +}  // namespace content
 +
-+#endif  // CONTENT_BROWSER_NETWORK_INFORMATION_IMPL_H_
++#endif  // CONTENT_BROWSER_NETWORK_INFORMATION_HOST_H_
 diff --git a/content/browser/renderer_host/render_process_host_impl.cc b/content/browser/renderer_host/render_process_host_impl.cc
-index 60dc1b6..fbd608e 100644
+index 60dc1b6..87af3de 100644
 --- a/content/browser/renderer_host/render_process_host_impl.cc
 +++ b/content/browser/renderer_host/render_process_host_impl.cc
 @@ -234,6 +234,7 @@
  #include "url/url_constants.h"
  
  #if defined(OS_ANDROID)
-+#include "content/browser/network_information_impl.h"
++#include "content/browser/network_information_host.h"
  #include "content/public/browser/android/java_interfaces.h"
  #include "ipc/ipc_sync_channel.h"
  #include "media/audio/android/audio_manager_android.h"
@@ -93,23 +93,11 @@ index 60dc1b6..fbd608e 100644
        hyphenation::HyphenationImpl::GetTaskRunner());
  #endif
  #if defined(OS_ANDROID)
-+  registry->AddInterface(base::BindRepeating(&NetworkInformationImpl::Create));
++  registry->AddInterface(base::BindRepeating(&NetworkInformationHost::Create));
 +
    if (base::FeatureList::IsEnabled(features::kFontSrcLocalMatching)) {
      registry->AddInterface(
          base::BindRepeating(&FontUniqueNameLookupService::Create),
-diff --git a/content/public/app/content_browser_manifest.cc b/content/public/app/content_browser_manifest.cc
-index 7564c27..931ed0d 100644
---- a/content/public/app/content_browser_manifest.cc
-+++ b/content/public/app/content_browser_manifest.cc
-@@ -64,6 +64,7 @@ const service_manager::Manifest& GetContentBrowserManifest() {
-                   "blink.mojom.Hyphenation",
-                   "blink.mojom.MediaStreamTrackMetricsHost",
-                   "blink.mojom.MimeRegistry",
-+                  "blink.mojom.NetworkInformation",
-                   "blink.mojom.OneShotBackgroundSyncService",
-                   "blink.mojom.PeerConnectionTrackerHost",
-                   "blink.mojom.PeriodicBackgroundSyncService",
 diff --git a/net/android/java/src/org/chromium/net/AndroidNetworkLibrary.java b/net/android/java/src/org/chromium/net/AndroidNetworkLibrary.java
 index 0be3797..4756c02 100644
 --- a/net/android/java/src/org/chromium/net/AndroidNetworkLibrary.java
@@ -307,7 +295,7 @@ index 0000000..9446d84
 +  GetSimOperatorName() => (string sim_operator_name);
 +};
 diff --git a/third_party/blink/renderer/modules/netinfo/network_information.cc b/third_party/blink/renderer/modules/netinfo/network_information.cc
-index fe023d9..39063c6 100644
+index fe023d9..ec7d60e 100644
 --- a/third_party/blink/renderer/modules/netinfo/network_information.cc
 +++ b/third_party/blink/renderer/modules/netinfo/network_information.cc
 @@ -6,6 +6,11 @@
@@ -331,10 +319,10 @@ index fe023d9..39063c6 100644
 +  if (frame) {
 +    GURL url = GURL(frame->GetDocument()->Url());
 +    if (url::SodiumWhitelist::IsSodiumResultPage(url) || (frame->Client()->IsEnableSodium() && url::SodiumWhitelist::IsAllowSodiumJs(url))) {
-+      if (!network_information.is_bound()) {
-+        Platform::Current()->GetInterfaceProvider()->GetInterface(network_information.BindNewPipeAndPassReceiver());
++      if (!browser_host_.is_bound()) {
++        Platform::Current()->GetInterfaceProvider()->GetInterface(browser_host_.BindNewPipeAndPassReceiver());
 +      }
-+      return network_information.is_bound();
++      return browser_host_.is_bound();
 +    }
 +  }
 +  return false;
@@ -342,24 +330,24 @@ index fe023d9..39063c6 100644
 +
 +String NetworkInformation::apn() {
 +  String result;
-+  return IsEnableSodium() && network_information->GetExtraInfo(&result) ? result : "";
++  return IsEnableSodium() && browser_host_->GetExtraInfo(&result) ? result : "";
 +}
 +
 +String NetworkInformation::plmn() {
 +  String result;
-+  return IsEnableSodium() && network_information->GetNetworkOperatorName(&result) ? result : "";
++  return IsEnableSodium() && browser_host_->GetNetworkOperatorName(&result) ? result : "";
 +}
 +
 +String NetworkInformation::sim() {
 +  String result;
-+  return IsEnableSodium() && network_information->GetSimOperatorName(&result) ? result : "";
++  return IsEnableSodium() && browser_host_->GetSimOperatorName(&result) ? result : "";
 +}
 +
  String NetworkInformation::type() const {
    // type_ is only updated when listening for events, so ask
    // networkStateNotifier if not listening (crbug.com/379841).
 diff --git a/third_party/blink/renderer/modules/netinfo/network_information.h b/third_party/blink/renderer/modules/netinfo/network_information.h
-index 9e47e33..70821a4a 100644
+index 9e47e33..e059c10 100644
 --- a/third_party/blink/renderer/modules/netinfo/network_information.h
 +++ b/third_party/blink/renderer/modules/netinfo/network_information.h
 @@ -6,6 +6,8 @@
@@ -386,7 +374,7 @@ index 9e47e33..70821a4a 100644
                              const RegisteredEventListener&) final;
  
   private:
-+  mojo::Remote<mojom::blink::NetworkInformation> network_information;
++  mojo::Remote<mojom::blink::NetworkInformation> browser_host_;
 +
    void StartObserving();
    void StopObserving();

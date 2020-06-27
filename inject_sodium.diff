@@ -12,7 +12,7 @@ index fdbec15..081e565 100644
          <include name="IDR_DISCARDS_MOJO_API_JS" file="resources\discards\mojo_api.js" compress="gzip" type="BINDATA" />
          <include name="IDR_DISCARDS_DATABASE_TAB_JS" file="${root_gen_dir}\chrome\browser\resources\discards\database_tab.js" use_base_dir="false" compress="gzip" type="BINDATA" />
 diff --git a/chrome/renderer/chrome_content_renderer_client.cc b/chrome/renderer/chrome_content_renderer_client.cc
-index e03ad3a5..7b3107d 100644
+index e03ad3a5..343cbf2 100644
 --- a/chrome/renderer/chrome_content_renderer_client.cc
 +++ b/chrome/renderer/chrome_content_renderer_client.cc
 @@ -39,6 +39,7 @@
@@ -48,9 +48,9 @@ index e03ad3a5..7b3107d 100644
 +  if (!frame) return;
 +
 +  GURL url = GURL(frame->GetDocument().Url());
-+  LOG(INFO) << "frame.url: " << url.spec();
-+  LOG(INFO) << "render_frame.main_frame: " << render_frame->IsMainFrame();
-+  LOG(INFO) << "render_frame.enable_sodium: " << render_frame->IsEnableSodium();
++  //LOG(INFO) << "frame.url: " << url.spec();
++  //LOG(INFO) << "render_frame.main_frame: " << render_frame->IsMainFrame();
++  //LOG(INFO) << "render_frame.enable_sodium: " << render_frame->IsEnableSodium();
 +
 +  if (render_frame->IsMainFrame() && render_frame->IsEnableSodium() && url::SodiumWhitelist::IsAllowSodiumJs(url)) {
 +    base::StringPiece content_script = ui::ResourceBundle::GetSharedInstance().GetRawDataResource(IDR_CONTENT_SCRIPT_JS);
