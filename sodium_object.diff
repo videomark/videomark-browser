@@ -329,10 +329,10 @@ index 18cc391..536aeca 100644
      "//third_party/blink/renderer/modules/srcobject",
      "//third_party/blink/renderer/modules/storage",
 diff --git a/third_party/blink/renderer/modules/modules_idl_files.gni b/third_party/blink/renderer/modules/modules_idl_files.gni
-index f6dae1f..8f02bc7 100644
+index f6dae1f..6fb1081 100644
 --- a/third_party/blink/renderer/modules/modules_idl_files.gni
 +++ b/third_party/blink/renderer/modules/modules_idl_files.gni
-@@ -330,6 +330,11 @@ modules_idl_files =
+@@ -330,6 +330,12 @@ modules_idl_files =
            "shapedetection/detected_text.idl",
            "shapedetection/face_detector.idl",
            "shapedetection/text_detector.idl",
@@ -341,10 +341,11 @@ index f6dae1f..8f02bc7 100644
 +          "sodium/sodium_storage_area.idl",
 +          "sodium/sodium_storage_area_callback.idl",
 +          "sodium/sodium_storage_area_get_callback.idl",
++          "sodium/sodium_tab.idl",
            "speech/speech_grammar.idl",
            "speech/speech_grammar_list.idl",
            "speech/speech_recognition.idl",
-@@ -1028,6 +1033,7 @@ modules_dependency_idl_files =
+@@ -1028,6 +1034,7 @@ modules_dependency_idl_files =
            "screen_orientation/screen_screen_orientation.idl",
            "service_worker/navigator_service_worker.idl",
            "sms/navigator_sms.idl",
@@ -354,10 +355,10 @@ index f6dae1f..8f02bc7 100644
            "srcobject/html_media_element_src_object.idl",
 diff --git a/third_party/blink/renderer/modules/sodium/BUILD.gn b/third_party/blink/renderer/modules/sodium/BUILD.gn
 new file mode 100644
-index 0000000..117b0aa
+index 0000000..eaf7352
 --- /dev/null
 +++ b/third_party/blink/renderer/modules/sodium/BUILD.gn
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,16 @@
 +import("//third_party/blink/renderer/modules/modules.gni")
 +
 +blink_modules_sources("sodium") {
@@ -366,6 +367,8 @@ index 0000000..117b0aa
 +    "sodium_storage_area.h",
 +    "sodium_storage.cc",
 +    "sodium_storage.h",
++    "sodium_tab.cc",
++    "sodium_tab.h",
 +    "sodium.cc",
 +    "sodium.h",
 +    "window_sodium.cc",
@@ -384,10 +387,10 @@ index 0000000..6639f0a
 +]
 diff --git a/third_party/blink/renderer/modules/sodium/sodium.cc b/third_party/blink/renderer/modules/sodium/sodium.cc
 new file mode 100644
-index 0000000..d39beca7
+index 0000000..71de610
 --- /dev/null
 +++ b/third_party/blink/renderer/modules/sodium/sodium.cc
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,47 @@
 +#include "third_party/blink/renderer/modules/sodium/sodium.h"
 +
 +#include "third_party/blink/renderer/core/dom/document.h"
@@ -400,6 +403,7 @@ index 0000000..d39beca7
 +
 +void Sodium::Trace(blink::Visitor* visitor) {
 +  visitor->Trace(storage_);
++  visitor->Trace(current_tab_);
 +  ScriptWrappable::Trace(visitor);
 +  ContextClient::Trace(visitor);
 +}
@@ -426,13 +430,20 @@ index 0000000..d39beca7
 +  return storage_.Get();
 +}
 +
++SodiumTab* Sodium::currentTab() {
++  LocalFrame* frame = GetFrame();
++  if (!current_tab_ && frame)
++    current_tab_ = MakeGarbageCollected<SodiumTab>(frame);
++  return current_tab_.Get();
++}
++
 +}  // namespace blink
 diff --git a/third_party/blink/renderer/modules/sodium/sodium.h b/third_party/blink/renderer/modules/sodium/sodium.h
 new file mode 100644
-index 0000000..f63f3fc
+index 0000000..b94f2a9
 --- /dev/null
 +++ b/third_party/blink/renderer/modules/sodium/sodium.h
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,35 @@
 +#ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_SODIUM_SODIUM_H_
 +#define THIRD_PARTY_BLINK_RENDERER_MODULES_SODIUM_SODIUM_H_
 +
@@ -440,6 +451,7 @@ index 0000000..f63f3fc
 +#include "third_party/blink/renderer/core/execution_context/context_lifecycle_observer.h"
 +
 +#include "third_party/blink/renderer/modules/sodium/sodium_storage.h"
++#include "third_party/blink/renderer/modules/sodium/sodium_tab.h"
 +
 +namespace blink {
 +
@@ -456,10 +468,12 @@ index 0000000..f63f3fc
 +  String userAgent();
 +  String locationIp();
 +  SodiumStorage* storage();
++  SodiumTab* currentTab();
 +
 + private:
 +  const String user_agent_;
 +  Member<SodiumStorage> storage_;
++  Member<SodiumTab> current_tab_;
 +};
 +
 +}  // namespace blink
@@ -467,14 +481,15 @@ index 0000000..f63f3fc
 +#endif  // THIRD_PARTY_BLINK_RENDERER_MODULES_SODIUM_SODIUM_H_
 diff --git a/third_party/blink/renderer/modules/sodium/sodium.idl b/third_party/blink/renderer/modules/sodium/sodium.idl
 new file mode 100644
-index 0000000..937328b
+index 0000000..0ec315c
 --- /dev/null
 +++ b/third_party/blink/renderer/modules/sodium/sodium.idl
-@@ -0,0 +1,5 @@
+@@ -0,0 +1,6 @@
 +interface Sodium {
 +    readonly attribute DOMString userAgent;
 +    readonly attribute DOMString locationIp;
 +    readonly attribute SodiumStorage storage;
++    readonly attribute SodiumTab currentTab;
 +};
 diff --git a/third_party/blink/renderer/modules/sodium/sodium_storage.cc b/third_party/blink/renderer/modules/sodium/sodium_storage.cc
 new file mode 100644
@@ -980,6 +995,140 @@ index 0000000..3c3bcb7
 @@ -0,0 +1,3 @@
 +callback interface SodiumStorageAreaGetCallback {
 +  void Invoke(object items);
++};
+diff --git a/third_party/blink/renderer/modules/sodium/sodium_tab.cc b/third_party/blink/renderer/modules/sodium/sodium_tab.cc
+new file mode 100644
+index 0000000..f6a0668
+--- /dev/null
++++ b/third_party/blink/renderer/modules/sodium/sodium_tab.cc
+@@ -0,0 +1,85 @@
++#include "third_party/blink/renderer/modules/sodium/sodium.h"
++
++#include "third_party/blink/public/common/thread_safe_browser_interface_broker_proxy.h"
++#include "third_party/blink/renderer/core/frame/local_frame_client.h"
++
++namespace blink {
++
++SodiumTab::SodiumTab(LocalFrame* frame) : ContextClient(frame) {
++  if (!frame || !frame->Client()) return;
++  LocalFrameClient* client = frame->Client();
++  //LOG(INFO) << "SodiumTab(frame): initialized=" << client->SodiumInitialized();
++  if (client->SodiumInitialized()) return;
++
++  mojo::Remote<mojom::blink::SodiumStorageArea> host;
++  Platform::Current()->GetBrowserInterfaceBroker()->GetInterface(host.BindNewPipeAndPassReceiver());
++  //LOG(INFO) << "SodiumTab(frame): SodiumStorageArea.is_bound=" << host.is_bound();
++  if (!host.is_bound()) return;
++
++  base::ListValue host_keys = base::ListValue();
++  host_keys.AppendString("settings");
++  base::Value host_items;
++  if (!host->get("local", std::move(host_keys), &host_items)) return;
++
++  v8::Isolate* isolate = GetExecutionContext()->GetIsolate();
++  v8::Local<v8::Context> context = isolate->GetCurrentContext();
++  v8::Local<v8::Object> out_items = v8::Object::New(isolate);
++  for (const auto& iter : host_items.DictItems()) {
++    v8::Local<v8::String> out_key = v8::String::NewFromUtf8(isolate, iter.first.data(), v8::NewStringType::kNormal).ToLocalChecked();
++    base::Value::BlobStorage out_blob = iter.second.GetBlob();
++    scoped_refptr<SharedBuffer> out_buffer = SharedBuffer::Create(out_blob.data(), out_blob.size());
++    scoped_refptr<SerializedScriptValue> deserialize_value = SerializedScriptValue::Create(out_buffer);
++    if (!out_items->Set(context, out_key, deserialize_value->Deserialize(isolate)).ToChecked()) return;
++  }
++
++  bool sodium_display_on_player = true;
++  v8::Local<v8::String> settings_key = v8::String::NewFromUtf8(isolate, "settings", v8::NewStringType::kNormal).ToLocalChecked();
++  if (out_items->Has(context, settings_key).ToChecked()) {
++    v8::Local<v8::Value> settings_value = out_items->Get(context, settings_key).ToLocalChecked();
++    //LOG(INFO) << "SodiumTab(frame): settings.IsObject()=" << settings_value->IsObject();
++    if (settings_value->IsObject()) {
++      v8::Local<v8::Object> settings = settings_value->ToObject(context).ToLocalChecked();
++      v8::Local<v8::String> display_on_player_key = v8::String::NewFromUtf8(isolate, "display_on_player", v8::NewStringType::kNormal).ToLocalChecked();
++      //LOG(INFO) << "SodiumTab(frame): settings.has(display_on_player)=" << settings->Has(context, display_on_player_key).ToChecked();
++      if (settings->Has(context, display_on_player_key).ToChecked()) {
++        v8::Local<v8::Value> display_on_player_value = settings->Get(context, display_on_player_key).ToLocalChecked();
++        //LOG(INFO) << "SodiumTab(frame): display_on_player.IsBoolean()=" << display_on_player_value->IsBoolean();
++        if (display_on_player_value->IsBoolean()) {
++          sodium_display_on_player = display_on_player_value->ToBoolean(isolate)->Value();
++          //LOG(INFO) << "SodiumTab(frame): display_on_player=" << sodium_display_on_player;
++        }
++      }
++    }
++  }
++
++  client->SetSodiumDisplayOnPlayer(sodium_display_on_player);
++  client->SetSodiumInitialized(true);
++  //LOG(INFO) << "SodiumTab(frame): set initialized.";
++}
++
++void SodiumTab::Trace(blink::Visitor* visitor) {
++  ScriptWrappable::Trace(visitor);
++  ContextClient::Trace(visitor);
++}
++
++bool SodiumTab::alive() {
++  LocalFrame* frame = GetFrame();
++  return (frame && frame->Client()) ? frame->Client()->SodiumAlive() : false;
++}
++
++void SodiumTab::setAlive(bool sodium_alive) {
++  LocalFrame* frame = GetFrame();
++  if (frame && frame->Client()) frame->Client()->SetSodiumAlive(sodium_alive);
++}
++
++bool SodiumTab::displayOnPlayer() {
++  LocalFrame* frame = GetFrame();
++  return (frame && frame->Client()) ? frame->Client()->SodiumDisplayOnPlayer() : false;
++}
++
++void SodiumTab::setDisplayOnPlayer(bool sodium_display_on_player) {
++  LocalFrame* frame = GetFrame();
++  if (frame && frame->Client()) frame->Client()->SetSodiumDisplayOnPlayer(sodium_display_on_player);
++}
++
++}  // namespace blink
+diff --git a/third_party/blink/renderer/modules/sodium/sodium_tab.h b/third_party/blink/renderer/modules/sodium/sodium_tab.h
+new file mode 100644
+index 0000000..7e96954
+--- /dev/null
++++ b/third_party/blink/renderer/modules/sodium/sodium_tab.h
+@@ -0,0 +1,27 @@
++#ifndef THIRD_PARTY_BLINK_RENDERER_MODULES_SODIUM_SODIUM_TAB_H_
++#define THIRD_PARTY_BLINK_RENDERER_MODULES_SODIUM_SODIUM_TAB_H_
++
++#include "third_party/blink/renderer/platform/bindings/script_wrappable.h"
++#include "third_party/blink/renderer/core/execution_context/context_lifecycle_observer.h"
++
++namespace blink {
++
++class LocalFrame;
++
++class SodiumTab final : public ScriptWrappable, public ContextClient {
++  DEFINE_WRAPPERTYPEINFO();
++  USING_GARBAGE_COLLECTED_MIXIN(SodiumTab);
++
++ public:
++  explicit SodiumTab(LocalFrame*);
++  void Trace(blink::Visitor*) override;
++
++  bool alive();
++  void setAlive(bool);
++  bool displayOnPlayer();
++  void setDisplayOnPlayer(bool);
++};
++
++}  // namespace blink
++
++#endif  // THIRD_PARTY_BLINK_RENDERER_MODULES_SODIUM_SODIUM_TAB_H_
+diff --git a/third_party/blink/renderer/modules/sodium/sodium_tab.idl b/third_party/blink/renderer/modules/sodium/sodium_tab.idl
+new file mode 100644
+index 0000000..2221135
+--- /dev/null
++++ b/third_party/blink/renderer/modules/sodium/sodium_tab.idl
+@@ -0,0 +1,4 @@
++interface SodiumTab {
++    attribute boolean alive;
++    attribute boolean displayOnPlayer;
 +};
 diff --git a/third_party/blink/renderer/modules/sodium/window_sodium.cc b/third_party/blink/renderer/modules/sodium/window_sodium.cc
 new file mode 100644
