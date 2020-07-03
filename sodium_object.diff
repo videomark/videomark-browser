@@ -814,7 +814,7 @@ index 0000000..2221135
 +};
 diff --git a/third_party/blink/renderer/modules/sodium/window_sodium.cc b/third_party/blink/renderer/modules/sodium/window_sodium.cc
 new file mode 100644
-index 0000000..d5d7289
+index 0000000..e62e355
 --- /dev/null
 +++ b/third_party/blink/renderer/modules/sodium/window_sodium.cc
 @@ -0,0 +1,44 @@
@@ -854,7 +854,7 @@ index 0000000..d5d7289
 +  if (frame) {
 +    GURL url = GURL(frame->GetDocument()->Url());
 +    if (!sodium_ && (url::SodiumWhitelist::IsSodiumResultPage(url)
-+        || (frame->Client()->IsEnableSodium() && url::SodiumWhitelist::IsAllowSodiumJs(url)))) {
++        || (frame->Client()->EnableSodium() && url::SodiumWhitelist::IsAllowSodiumJs(url)))) {
 +      sodium_ = MakeGarbageCollected<Sodium>(frame);
 +    }
 +  }

@@ -449,7 +449,7 @@ index fe4ca0f..d959eae 100644
    IPC_STRUCT_TRAITS_MEMBER(webrtc_udp_min_port)
    IPC_STRUCT_TRAITS_MEMBER(webrtc_udp_max_port)
 diff --git a/content/public/renderer/render_frame.h b/content/public/renderer/render_frame.h
-index e7870c4..b65d856 100644
+index e7870c4..4dd8db8 100644
 --- a/content/public/renderer/render_frame.h
 +++ b/content/public/renderer/render_frame.h
 @@ -35,6 +35,7 @@ class WebElement;
@@ -464,7 +464,7 @@ index e7870c4..b65d856 100644
    // Returns the device scale factor of the display the render frame is in.
    virtual float GetDeviceScaleFactor() = 0;
  
-+  virtual bool IsEnableSodium() = 0;
++  virtual bool EnableSodium() = 0;
 +
 +  virtual blink::WebString SodiumUserAgent() = 0;
 +
@@ -472,7 +472,7 @@ index e7870c4..b65d856 100644
    ~RenderFrame() override {}
  
 diff --git a/content/renderer/render_frame_impl.cc b/content/renderer/render_frame_impl.cc
-index 3f3f5da..0e28b229 100644
+index 3f3f5da..c8d4f59 100644
 --- a/content/renderer/render_frame_impl.cc
 +++ b/content/renderer/render_frame_impl.cc
 @@ -47,6 +47,7 @@
@@ -495,7 +495,7 @@ index 3f3f5da..0e28b229 100644
    return GetLocalRootRenderWidget()->GetScreenInfo().device_scale_factor;
  }
  
-+bool RenderFrameImpl::IsEnableSodium() {
++bool RenderFrameImpl::EnableSodium() {
 +  return render_view_->renderer_preferences_.enable_sodium;
 +}
 +
@@ -536,14 +536,14 @@ index 3f3f5da..0e28b229 100644
 +
  }  // namespace content
 diff --git a/content/renderer/render_frame_impl.h b/content/renderer/render_frame_impl.h
-index 2e25541..7ffacf3 100644
+index 2e25541..5c0e142 100644
 --- a/content/renderer/render_frame_impl.h
 +++ b/content/renderer/render_frame_impl.h
 @@ -916,6 +916,22 @@ class CONTENT_EXPORT RenderFrameImpl
    void SetWebURLLoaderFactoryOverrideForTest(
        std::unique_ptr<blink::WebURLLoaderFactoryForTest> factory);
  
-+  bool IsEnableSodium() override;
++  bool EnableSodium() override;
 +
 +  bool SodiumInitialized() override;
 +
@@ -580,7 +580,7 @@ index ec41e11..0ec0edc 100644
    // of the strings defined in privacy.json. The allowed values are specified
    // in webrtc_ip_handling_policy.h.
 diff --git a/third_party/blink/public/web/web_local_frame_client.h b/third_party/blink/public/web/web_local_frame_client.h
-index dd2e80e..58fd1b0 100644
+index dd2e80e..c484d14 100644
 --- a/third_party/blink/public/web/web_local_frame_client.h
 +++ b/third_party/blink/public/web/web_local_frame_client.h
 @@ -624,6 +624,16 @@ class BLINK_EXPORT WebLocalFrameClient {
@@ -588,7 +588,7 @@ index dd2e80e..58fd1b0 100644
    virtual WebString DoNotTrackValue() { return WebString(); }
  
 +  // Sodium ----------------------------------------------------
-+  virtual bool IsEnableSodium() { return false; }
++  virtual bool EnableSodium() { return false; }
 +  virtual bool SodiumInitialized() { return true; }
 +  virtual void SetSodiumInitialized(bool sodium_initialized) {}
 +  virtual bool SodiumAlive() { return false; }
@@ -601,15 +601,15 @@ index dd2e80e..58fd1b0 100644
  
    // Asks the embedder whether WebGL is blocked for the WebFrame. This call is
 diff --git a/third_party/blink/renderer/core/exported/local_frame_client_impl.cc b/third_party/blink/renderer/core/exported/local_frame_client_impl.cc
-index 1122eaf..7e063ca 100644
+index 1122eaf..a8497ac 100644
 --- a/third_party/blink/renderer/core/exported/local_frame_client_impl.cc
 +++ b/third_party/blink/renderer/core/exported/local_frame_client_impl.cc
 @@ -768,6 +768,38 @@ String LocalFrameClientImpl::DoNotTrackValue() {
    return String();
  }
  
-+bool LocalFrameClientImpl::IsEnableSodium() {
-+  return web_frame_->Client()->IsEnableSodium();
++bool LocalFrameClientImpl::EnableSodium() {
++  return web_frame_->Client()->EnableSodium();
 +}
 +
 +bool LocalFrameClientImpl::SodiumInitialized() {
@@ -644,14 +644,14 @@ index 1122eaf..7e063ca 100644
  // will occur.
  void LocalFrameClientImpl::TransitionToCommittedForNewPage() {
 diff --git a/third_party/blink/renderer/core/exported/local_frame_client_impl.h b/third_party/blink/renderer/core/exported/local_frame_client_impl.h
-index 79340cb..df042b5 100644
+index 79340cb..994a097 100644
 --- a/third_party/blink/renderer/core/exported/local_frame_client_impl.h
 +++ b/third_party/blink/renderer/core/exported/local_frame_client_impl.h
 @@ -172,6 +172,14 @@ class LocalFrameClientImpl final : public LocalFrameClient {
    WTF::String UserAgent() override;
    blink::UserAgentMetadata UserAgentMetadata() override;
    WTF::String DoNotTrackValue() override;
-+  bool IsEnableSodium() override;
++  bool EnableSodium() override;
 +  bool SodiumInitialized() override;
 +  void SetSodiumInitialized(bool sodium_initialized) override;
 +  bool SodiumAlive() override;
@@ -663,14 +663,14 @@ index 79340cb..df042b5 100644
    LocalFrame* CreateFrame(const WTF::AtomicString& name,
                            HTMLFrameOwnerElement*) override;
 diff --git a/third_party/blink/renderer/core/frame/local_frame_client.h b/third_party/blink/renderer/core/frame/local_frame_client.h
-index 985c6b2..0ecbedb 100644
+index 985c6b2..98e01e7 100644
 --- a/third_party/blink/renderer/core/frame/local_frame_client.h
 +++ b/third_party/blink/renderer/core/frame/local_frame_client.h
 @@ -244,6 +244,22 @@ class CORE_EXPORT LocalFrameClient : public FrameClient {
  
    virtual String DoNotTrackValue() = 0;
  
-+  virtual bool IsEnableSodium() = 0;
++  virtual bool EnableSodium() = 0;
 +
 +  virtual bool SodiumInitialized() = 0;
 +
@@ -690,14 +690,14 @@ index 985c6b2..0ecbedb 100644
  
    virtual LocalFrame* CreateFrame(const AtomicString& name,
 diff --git a/third_party/blink/renderer/core/loader/empty_clients.h b/third_party/blink/renderer/core/loader/empty_clients.h
-index a185ee9..e3a772f 100644
+index a185ee9..05976bc 100644
 --- a/third_party/blink/renderer/core/loader/empty_clients.h
 +++ b/third_party/blink/renderer/core/loader/empty_clients.h
 @@ -328,6 +328,22 @@ class CORE_EXPORT EmptyLocalFrameClient : public LocalFrameClient {
  
    String DoNotTrackValue() override { return String(); }
  
-+  bool IsEnableSodium() override { return false; }
++  bool EnableSodium() override { return false; }
 +
 +  bool SodiumInitialized() override { return true; }
 +

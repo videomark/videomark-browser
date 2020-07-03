@@ -4,7 +4,7 @@
 * https://chromium.googlesource.com/chromium/src/+/master/third_party/blink/renderer/core/LICENSE-LGPL-2.1
 
 diff --git a/third_party/blink/renderer/core/timing/performance.cc b/third_party/blink/renderer/core/timing/performance.cc
-index a1f4d2f..66d0ef6 100644
+index a1f4d2f..827ec0b 100644
 --- a/third_party/blink/renderer/core/timing/performance.cc
 +++ b/third_party/blink/renderer/core/timing/performance.cc
 @@ -50,6 +50,8 @@
@@ -34,7 +34,7 @@ index a1f4d2f..66d0ef6 100644
 +    LocalFrame* frame = window->GetFrame();
 +    if (frame) {
 +      GURL url = GURL(frame->GetDocument()->Url());
-+      if (frame->Client()->IsEnableSodium() && url::SodiumWhitelist::IsAllowSodiumJs(url)) {
++      if (frame->Client()->EnableSodium() && url::SodiumWhitelist::IsAllowSodiumJs(url)) {
 +        return true;
 +      }
 +    }

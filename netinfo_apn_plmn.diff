@@ -295,7 +295,7 @@ index 0000000..9446d84
 +  GetSimOperatorName() => (string sim_operator_name);
 +};
 diff --git a/third_party/blink/renderer/modules/netinfo/network_information.cc b/third_party/blink/renderer/modules/netinfo/network_information.cc
-index fe023d9..ec7d60e 100644
+index fe023d9..1bbf6294 100644
 --- a/third_party/blink/renderer/modules/netinfo/network_information.cc
 +++ b/third_party/blink/renderer/modules/netinfo/network_information.cc
 @@ -6,6 +6,11 @@
@@ -314,11 +314,11 @@ index fe023d9..ec7d60e 100644
    return !!connection_observer_handle_;
  }
  
-+bool NetworkInformation::IsEnableSodium() {
++bool NetworkInformation::SetupHost() {
 +  LocalFrame* frame = GetFrame();
 +  if (frame) {
 +    GURL url = GURL(frame->GetDocument()->Url());
-+    if (url::SodiumWhitelist::IsSodiumResultPage(url) || (frame->Client()->IsEnableSodium() && url::SodiumWhitelist::IsAllowSodiumJs(url))) {
++    if (url::SodiumWhitelist::IsSodiumResultPage(url) || (frame->Client()->EnableSodium() && url::SodiumWhitelist::IsAllowSodiumJs(url))) {
 +      if (!browser_host_.is_bound()) {
 +        Platform::Current()->GetInterfaceProvider()->GetInterface(browser_host_.BindNewPipeAndPassReceiver());
 +      }
@@ -330,24 +330,24 @@ index fe023d9..ec7d60e 100644
 +
 +String NetworkInformation::apn() {
 +  String result;
-+  return IsEnableSodium() && browser_host_->GetExtraInfo(&result) ? result : "";
++  return SetupHost() && browser_host_->GetExtraInfo(&result) ? result : "";
 +}
 +
 +String NetworkInformation::plmn() {
 +  String result;
-+  return IsEnableSodium() && browser_host_->GetNetworkOperatorName(&result) ? result : "";
++  return SetupHost() && browser_host_->GetNetworkOperatorName(&result) ? result : "";
 +}
 +
 +String NetworkInformation::sim() {
 +  String result;
-+  return IsEnableSodium() && browser_host_->GetSimOperatorName(&result) ? result : "";
++  return SetupHost() && browser_host_->GetSimOperatorName(&result) ? result : "";
 +}
 +
  String NetworkInformation::type() const {
    // type_ is only updated when listening for events, so ask
    // networkStateNotifier if not listening (crbug.com/379841).
 diff --git a/third_party/blink/renderer/modules/netinfo/network_information.h b/third_party/blink/renderer/modules/netinfo/network_information.h
-index 9e47e33..e059c10 100644
+index 9e47e33..3e02ef6 100644
 --- a/third_party/blink/renderer/modules/netinfo/network_information.h
 +++ b/third_party/blink/renderer/modules/netinfo/network_information.h
 @@ -6,6 +6,8 @@
@@ -359,21 +359,21 @@ index 9e47e33..e059c10 100644
  #include "third_party/blink/public/platform/web_connection_type.h"
  #include "third_party/blink/public/platform/web_effective_connection_type.h"
  #include "third_party/blink/renderer/bindings/core/v8/active_script_wrappable.h"
-@@ -29,6 +31,10 @@ class NetworkInformation final
+@@ -29,6 +31,9 @@ class NetworkInformation final
    explicit NetworkInformation(ExecutionContext*);
    ~NetworkInformation() override;
  
-+  bool IsEnableSodium();
 +  String apn();
 +  String plmn();
 +  String sim();
    String type() const;
    double downlinkMax() const;
    String effectiveType();
-@@ -69,6 +75,8 @@ class NetworkInformation final
+@@ -69,6 +74,9 @@ class NetworkInformation final
                              const RegisteredEventListener&) final;
  
   private:
++  bool SetupHost();
 +  mojo::Remote<mojom::blink::NetworkInformation> browser_host_;
 +
    void StartObserving();
