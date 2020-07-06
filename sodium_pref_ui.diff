@@ -11,10 +11,27 @@ index 607431c..6536223 100644
    "java/src/org/chromium/chrome/browser/settings/about/AboutChromeSettings.java",
    "java/src/org/chromium/chrome/browser/settings/about/AboutSettingsBridge.java",
 diff --git a/chrome/android/java/res/menu/main_menu.xml b/chrome/android/java/res/menu/main_menu.xml
-index f2c7c73..7c63358 100644
+index f2c7c73..e2b1a8c 100644
 --- a/chrome/android/java/res/menu/main_menu.xml
 +++ b/chrome/android/java/res/menu/main_menu.xml
-@@ -83,6 +83,16 @@
+@@ -68,6 +68,16 @@
+             android:title="@string/menu_add_to_homescreen" />
+         <item android:id="@+id/open_webapk_id"
+             android:title="@string/menu_open_webapk" />
++        <item android:id="@+id/sodium_display_on_player_row_menu_id"
++            android:title="@null">
++          <menu>
++              <item android:id="@+id/sodium_display_on_player_id"
++                android:title="@string/menu_sodium_display_on_player" />
++              <item android:id="@+id/sodium_display_on_player_check_id"
++                android:title="@null"
++                android:checkable="true" />
++          </menu>
++        </item>
+         <item android:id="@+id/request_desktop_site_row_menu_id"
+             android:title="@null">
+           <menu>
+@@ -83,6 +93,16 @@
              android:icon="@drawable/reader_mode_prefs_icon" />
          <item android:id="@+id/preferences_id"
              android:title="@string/menu_settings" />
@@ -117,10 +134,10 @@ index 0000000..ae72e95
 +
 +</PreferenceScreen>
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
-index 8201302..5552066 100644
+index 8201302..eb47609 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeActivity.java
-@@ -2097,6 +2097,10 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
+@@ -2097,6 +2097,12 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
              currentTab.getWebContents().getNavigationController().setUseDesktopUserAgent(
                      !usingDesktopUserAgent, reloadOnChange);
              RecordUserAction.record("MobileMenuRequestDesktopSite");
@@ -128,22 +145,25 @@ index 8201302..5552066 100644
 +            final boolean reloadOnChange = !currentTab.isNativePage();
 +            final boolean enabled = currentTab.getEnableSodium();
 +            currentTab.setEnableSodium(!enabled, reloadOnChange);
++        } else if (id == R.id.sodium_display_on_player_id || id == R.id.sodium_display_on_player_check_id) {
++            currentTab.getWebContents().postMessageToMainFrame("{\"type\":\"FROM_ANDROID_UI\", \"method\":\"display_ui\", \"enabled\":" + !currentTab.getWebContents().isSodiumDisplayOnPlayer() + "}", null, "*", null);
          } else if (id == R.id.reader_mode_prefs_id) {
              DomDistillerUIUtils.openSettings(currentTab.getWebContents());
          } else {
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/appmenu/AppMenuPropertiesDelegateImpl.java b/chrome/android/java/src/org/chromium/chrome/browser/appmenu/AppMenuPropertiesDelegateImpl.java
-index 79faee2..03973d0 100644
+index 79faee2..671d936 100644
 --- a/chrome/android/java/src/org/chromium/chrome/browser/appmenu/AppMenuPropertiesDelegateImpl.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/appmenu/AppMenuPropertiesDelegateImpl.java
-@@ -282,6 +282,7 @@ public class AppMenuPropertiesDelegateImpl implements AppMenuPropertiesDelegate
+@@ -282,6 +282,8 @@ public class AppMenuPropertiesDelegateImpl implements AppMenuPropertiesDelegate
              prepareAddToHomescreenMenuItem(menu, currentTab, canShowHomeScreenMenuItem);
  
              updateRequestDesktopSiteMenuItem(menu, currentTab, true /* can show */);
 +            updateEnableSodiumMenuItem(menu, currentTab, false /* temporary don't show */);
++            updateSodiumDisplayOnPlayerMenuItem(menu, currentTab);
  
              // Only display reader mode settings menu option if the current page is in reader mode.
              menu.findItem(R.id.reader_mode_prefs_id)
-@@ -456,6 +457,38 @@ public class AppMenuPropertiesDelegateImpl implements AppMenuPropertiesDelegate
+@@ -456,6 +458,52 @@ public class AppMenuPropertiesDelegateImpl implements AppMenuPropertiesDelegate
      @Override
      public void onFooterViewInflated(AppMenuHandler appMenuHandler, View view) {}
  
@@ -177,6 +197,20 @@ index 79faee2..03973d0 100644
 +        menuLabel.setTitleCondensed(enabled
 +                        ? mContext.getString(R.string.sodium_on)
 +                        : mContext.getString(R.string.sodium_off));
++    }
++
++    /**
++     * @param menu {@link Menu} for sodium_display_on_player.
++     * @param currentTab      Current tab being displayed.
++     */
++    protected void updateSodiumDisplayOnPlayerMenuItem(Menu menu, Tab currentTab) {
++        MenuItem menuRow   = menu.findItem(R.id.sodium_display_on_player_row_menu_id);
++        MenuItem menuCheck = menu.findItem(R.id.sodium_display_on_player_check_id);
++        boolean alive           = currentTab.getWebContents().isSodiumAlive();
++        boolean displayOnPlayer = currentTab.getWebContents().isSodiumDisplayOnPlayer();
++
++        menuRow.setVisible(alive);
++        menuCheck.setChecked(displayOnPlayer);
 +    }
 +
      @Override
@@ -269,7 +303,7 @@ index 0000000..1fe9c46
 +    }
 +}
 diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
-index 7284bd0..a86b6cc 100644
+index 7284bd0..66ce895 100644
 --- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
 +++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
 @@ -644,6 +644,23 @@ CHAR-LIMIT guidelines:
@@ -296,3 +330,13 @@ index 7284bd0..a86b6cc 100644
        <!-- Privacy preferences -->
        <message name="IDS_PREFS_PRIVACY" desc="Title for the Privacy preferences. [CHAR-LIMIT=32]">
          Privacy
+@@ -2770,6 +2787,9 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
+       </message>
+ 
+       <!-- Main menu items -->
++      <message name="IDS_MENU_SODIUM_DISPLAY_ON_PLAYER" desc="Menu item for Sodium result display">
++        計測中に結果を表示
++      </message>
+       <message name="IDS_MENU_UPDATE" desc="Menu item for updating chrome. [CHAR-LIMIT=24]">
+         Update Chrome
+       </message>

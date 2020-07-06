@@ -362,6 +362,38 @@ index 0769246..ceee319 100644
    void CreateNewWindow(mojom::CreateNewWindowParamsPtr params,
                         CreateNewWindowCallback callback) override;
    void CreatePortal(
+diff --git a/content/browser/web_contents/web_contents_android.cc b/content/browser/web_contents/web_contents_android.cc
+index 6e614dcb..3bb6e31f 100644
+--- a/content/browser/web_contents/web_contents_android.cc
++++ b/content/browser/web_contents/web_contents_android.cc
+@@ -231,6 +231,14 @@ void WebContentsAndroid::RemoveDestructionObserver(
+   destruction_observers_.RemoveObserver(observer);
+ }
+ 
++bool WebContentsAndroid::IsSodiumAlive(JNIEnv* env, const JavaParamRef<jobject>& obj) const {
++  return web_contents_->GetMutableRendererPrefs()->sodium_alive;
++}
++
++bool WebContentsAndroid::IsSodiumDisplayOnPlayer(JNIEnv* env, const JavaParamRef<jobject>& obj) const {
++  return web_contents_->GetMutableRendererPrefs()->sodium_display_on_player;
++}
++
+ base::android::ScopedJavaLocalRef<jobject>
+ WebContentsAndroid::GetTopLevelNativeWindow(JNIEnv* env,
+                                             const JavaParamRef<jobject>& obj) {
+diff --git a/content/browser/web_contents/web_contents_android.h b/content/browser/web_contents/web_contents_android.h
+index c60c8e1..dc29f30 100644
+--- a/content/browser/web_contents/web_contents_android.h
++++ b/content/browser/web_contents/web_contents_android.h
+@@ -38,6 +38,8 @@ class CONTENT_EXPORT WebContentsAndroid {
+   // Methods called from Java
+   void ClearNativeReference(JNIEnv* env,
+                             const base::android::JavaParamRef<jobject>& obj);
++  bool IsSodiumAlive(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj) const;
++  bool IsSodiumDisplayOnPlayer(JNIEnv* env, const base::android::JavaParamRef<jobject>& obj) const;
+   base::android::ScopedJavaLocalRef<jobject> GetTopLevelNativeWindow(
+       JNIEnv* env,
+       const base::android::JavaParamRef<jobject>& obj);
 diff --git a/content/common/frame.mojom b/content/common/frame.mojom
 index bea0e96..ee37132 100644
 --- a/content/common/frame.mojom
@@ -411,6 +443,38 @@ index 62a4bdc..b085edf 100644
          NavigationEntry getEntryAtIndex(
                  long nativeNavigationControllerAndroid, NavigationControllerImpl caller, int index);
          NavigationEntry getVisibleEntry(
+diff --git a/content/public/android/java/src/org/chromium/content/browser/webcontents/WebContentsImpl.java b/content/public/android/java/src/org/chromium/content/browser/webcontents/WebContentsImpl.java
+index 47d07d8..60d0ce6 100644
+--- a/content/public/android/java/src/org/chromium/content/browser/webcontents/WebContentsImpl.java
++++ b/content/public/android/java/src/org/chromium/content/browser/webcontents/WebContentsImpl.java
+@@ -301,6 +301,18 @@ public class WebContentsImpl implements WebContents, RenderFrameHostDelegate, Wi
+     }
+ 
+     @Override
++    public boolean isSodiumAlive() {
++        checkNotDestroyed();
++        return WebContentsImplJni.get().isSodiumAlive(mNativeWebContentsAndroid, WebContentsImpl.this);
++    }
++
++    @Override
++    public boolean isSodiumDisplayOnPlayer() {
++        checkNotDestroyed();
++        return WebContentsImplJni.get().isSodiumDisplayOnPlayer(mNativeWebContentsAndroid, WebContentsImpl.this);
++    }
++
++    @Override
+     public WindowAndroid getTopLevelNativeWindow() {
+         checkNotDestroyed();
+         return WebContentsImplJni.get().getTopLevelNativeWindow(
+@@ -1026,6 +1038,8 @@ public class WebContentsImpl implements WebContents, RenderFrameHostDelegate, Wi
+ 
+         WebContents fromNativePtr(long webContentsAndroidPtr);
+         void clearNativeReference(long nativeWebContentsAndroid, WebContentsImpl caller);
++        boolean isSodiumAlive(long nativeWebContentsAndroid, WebContentsImpl caller);
++        boolean isSodiumDisplayOnPlayer(long nativeWebContentsAndroid, WebContentsImpl caller);
+         WindowAndroid getTopLevelNativeWindow(
+                 long nativeWebContentsAndroid, WebContentsImpl caller);
+         void setTopLevelNativeWindow(
 diff --git a/content/public/android/java/src/org/chromium/content_public/browser/NavigationController.java b/content/public/android/java/src/org/chromium/content_public/browser/NavigationController.java
 index 63456a3..207f8de 100644
 --- a/content/public/android/java/src/org/chromium/content_public/browser/NavigationController.java
@@ -433,6 +497,20 @@ index 63456a3..207f8de 100644
       * Return the NavigationEntry at the given index.
       * @param index Index to retrieve the NavigationEntry for.
       * @return Entry containing info about the navigation, null if the index is out of bounds.
+diff --git a/content/public/android/java/src/org/chromium/content_public/browser/WebContents.java b/content/public/android/java/src/org/chromium/content_public/browser/WebContents.java
+index 8a3cf03..ef63b08 100644
+--- a/content/public/android/java/src/org/chromium/content_public/browser/WebContents.java
++++ b/content/public/android/java/src/org/chromium/content_public/browser/WebContents.java
+@@ -93,6 +93,9 @@ public interface WebContents extends Parcelable {
+             ViewEventSink.InternalAccessDelegate accessDelegate, WindowAndroid windowAndroid,
+             @NonNull InternalsHolder internalsHolder);
+ 
++    boolean isSodiumAlive();
++    boolean isSodiumDisplayOnPlayer();
++
+     /**
+      * @return The top level WindowAndroid associated with this WebContents.  This can be null.
+      */
 diff --git a/content/public/common/common_param_traits_macros.h b/content/public/common/common_param_traits_macros.h
 index fe4ca0f..d959eae 100644
 --- a/content/public/common/common_param_traits_macros.h
