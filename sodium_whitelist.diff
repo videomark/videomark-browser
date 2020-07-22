@@ -13,7 +13,7 @@ index 5d6b897..e347a50 100644
      "url_canon.cc",
 diff --git a/url/sodium_whitelist.cc b/url/sodium_whitelist.cc
 new file mode 100644
-index 0000000..9bf08db
+index 0000000..1e6bcd8
 --- /dev/null
 +++ b/url/sodium_whitelist.cc
 @@ -0,0 +1,71 @@
@@ -47,8 +47,8 @@ index 0000000..9bf08db
 +    std::regex("^live\\d*\\.nicovideo\\.jp$"),
 +    std::regex("^sp\\.nicovideo\\.jp$"),
 +    std::regex("^sp\\.live\\.nicovideo\\.jp$"),
-+    std::regex("^fod\\.fujitv\\.co\\.jp$"),
-+    std::regex("^nhk-ondemand\\.jp$"),
++    std::regex("^(i\\.)?fod\\.fujitv\\.co\\.jp$"),
++    std::regex("^www\\.nhk-ondemand\\.jp$"),
 +    std::regex("^pc\\.video\\.dmkt-sp\\.jp$"),
 +    std::regex("^abema\\.tv$"),
 +    std::regex("^www\\.amazon\\.co\\.jp$"),
