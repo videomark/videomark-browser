@@ -61,13 +61,13 @@ PC 版サイト表示だと```window.navigator.userAgent```は PC のものに�
   - 容量制限はありません。getBytesInUse()、QUOTA_BYTES などのプロパティもありません。
   - onChanged イベントはありません。
   - chrome.storage とは違って、ウェブページのコンテンツとして動作します。
+  - キーは文字列として、値は V8 オブジェクトをシリアライズしたバイト列として保存されます。
 
 動画再生時の視聴情報収集が off または許可ドメイン以外の場合は、```window.sodium```は null になります。  
 
 ### sodium_storage.diff
 window.sodium.storageを介してデータを保存します。保存形式については以下のようになります。
 - データはプロファイルフォルダの```sodium_storage_local```に、LevelDB 形式で保存されます。
-- キーは文字列として、値は V8 オブジェクトをシリアライズしたバイト列として保存されます。
 - 圧縮は LevelDB により自動的に行われるため、事前事後の特別な処理は不要です。
 - [Mojo](https://chromium.googlesource.com/chromium/src/+/master/mojo/README.md) による IPC がアクセスのたびに行われます。
 
